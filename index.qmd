@@ -1,11 +1,5 @@
 ---
-title: "TopologicalDonut.github.io"
+title: "Home"
 ---
 
-This is a Quarto website.
-
-To learn more about Quarto websites visit <https://quarto.org/docs/websites>.
-
-```{r}
-1 + 1
-```
+Welcome to my site! I'm Stephen Min, a recent graduate from the MA in Economics program at Simon Fraser University. If you're interested, check out my portfolio and blog posts (to be done). 
