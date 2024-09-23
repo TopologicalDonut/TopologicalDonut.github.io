@@ -1,5 +1,16 @@
 ---
 title: "Home"
+image: media/BabyPudding.jpg
+toc: false
+about: 
+  template: jolla
+  image-shape: round
+  image-width: 18em
+  links:
+    - text: GitHub
+      href: https://github.com/TopologicalDonut
+    - text: Email
+      href: mailto:stephenmin31@gmail.com
 ---
 
 Welcome to my site! I'm Stephen Min, a recent graduate from the MA in Economics program at Simon Fraser University. If you're interested, check out my portfolio and blog posts (to be done). 
