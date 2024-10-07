@@ -8,7 +8,7 @@ bibliography: references.bib
 
 This is a mini-research paper that was done as my capstone project for the MA in economics at Simon Fraser University. I applied a causal machine learning algorithm (causal forest) to a dataset from @oreopoulos2011 that contains information on artificial resumes that were sent out to Canadian employers roughly 10 years ago. I used various transformations and visualizations of the algorithm outputs to quantify how different groups of minorities are impacted by discrimination in the labor market.
 
-[Link to paper {{< fa link >}}](files/899_Paper.pdf){.btn .btn-outline-primary} [Source code {{< fa brands github >}}](https://github.com/TopologicalDonut/My-Projects/tree/main/Master's%20Paper){.btn .btn-outline-primary}
+[Link to paper {{< fa link >}}](files/899_Paper.pdf){.btn .btn-outline-primary} [Source code {{< fa brands github >}}](https://github.com/TopologicalDonut/Masters-Paper){.btn .btn-outline-primary}
 
 # Vancouver Crime Analysis
 
