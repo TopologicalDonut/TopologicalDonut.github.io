@@ -1,0 +1,24 @@
+---
+title: "How Does Daylight Savings Time Affect Crime in Vancouver?"
+description: "placeholder"
+author:
+  - name: Stephen Min
+execute:
+  cache: true
+  message: false
+  warning: false
+format:
+  html:
+    code-fold: true
+    code-tools: true
+    code-overflow: wrap
+draft: true
+---
+
+blah blah
+
+
+```{r}
+library(tidyverse)
+test <- read_csv("https://raw.githubusercontent.com/TopologicalDonut/My-Projects/refs/heads/main/Vancouver%20Crime%20Analysis/Data/Processed/merged_data_clean.csv")
+```

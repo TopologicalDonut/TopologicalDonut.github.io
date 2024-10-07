@@ -8,14 +8,15 @@ website:
     right:
       - href: index.qmd
         text: Home
-      - about.qmd
+      - portfolio.qmd
+      - posts.qmd
 
 format:
   html:
     theme:
-      dark: darkly
+      dark: cyborg
       light: cosmo
-    css: styles.css
+    css: styles.scss
     toc: true
 
 editor: visual

@@ -1,0 +1,8 @@
+---
+title: "Posts"
+listing:
+  contents: posts/**/*.qmd
+  type: default # or grid or table
+  sort: "date desc"
+  categories: true
+---

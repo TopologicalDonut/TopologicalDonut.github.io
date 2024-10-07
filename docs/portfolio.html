@@ -7,7 +7,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
 
-<title>Stephen Min - Home</title>
+<title>Stephen Min - Portfolio</title>
 <style>
 code{white-space: pre-wrap;}
 span.smallcaps{font-variant: small-caps;}
@@ -20,7 +20,26 @@ ul.task-list li input[type="checkbox"] {
   margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
   vertical-align: middle;
 }
-</style>
+/* CSS for citations */
+div.csl-bib-body { }
+div.csl-entry {
+  clear: both;
+}
+.hanging-indent div.csl-entry {
+  margin-left:2em;
+  text-indent:-2em;
+}
+div.csl-left-margin {
+  min-width:2em;
+  float:left;
+}
+div.csl-right-inline {
+  margin-left:2em;
+  padding-left:1em;
+}
+div.csl-indent {
+  margin-left: 2em;
+}</style>
 
 
 <script src="site_libs/quarto-nav/quarto-nav.js"></script>
@@ -33,6 +52,7 @@ ul.task-list li input[type="checkbox"] {
 <script src="site_libs/quarto-html/quarto.js"></script>
 <script src="site_libs/quarto-html/popper.min.js"></script>
 <script src="site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="site_libs/quarto-html/anchor.min.js"></script>
 <link href="site_libs/quarto-html/tippy.css" rel="stylesheet">
 <link href="site_libs/quarto-html/quarto-syntax-highlighting.css" rel="stylesheet" class="quarto-color-scheme" id="quarto-text-highlighting-styles">
 <link href="site_libs/quarto-html/quarto-syntax-highlighting-dark.css" rel="stylesheet" class="quarto-color-scheme quarto-color-alternate" id="quarto-text-highlighting-styles">
@@ -40,6 +60,8 @@ ul.task-list li input[type="checkbox"] {
 <link href="site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
 <link href="site_libs/bootstrap/bootstrap.min.css" rel="stylesheet" class="quarto-color-scheme" id="quarto-bootstrap" data-mode="light">
 <link href="site_libs/bootstrap/bootstrap-dark.min.css" rel="stylesheet" class="quarto-color-scheme quarto-color-alternate" id="quarto-bootstrap" data-mode="dark">
+<link href="site_libs/quarto-contrib/fontawesome6-0.1.0/all.css" rel="stylesheet">
+<link href="site_libs/quarto-contrib/fontawesome6-0.1.0/latex-fontsize.css" rel="stylesheet">
 <script id="quarto-search-options" type="application/json">{
   "location": "navbar",
   "copy-button": false,
@@ -65,7 +87,7 @@ ul.task-list li input[type="checkbox"] {
 <link rel="stylesheet" href="styles.scss">
 </head>
 
-<body class="nav-fixed fullcontent">
+<body class="nav-fixed">
 
 <div id="quarto-search-results"></div>
   <header id="quarto-header" class="headroom fixed-top">
@@ -83,11 +105,11 @@ ul.task-list li input[type="checkbox"] {
           <div class="collapse navbar-collapse" id="navbarCollapse">
             <ul class="navbar-nav navbar-nav-scroll ms-auto">
   <li class="nav-item">
-    <a class="nav-link active" href="./index.html" rel="" target="" aria-current="page">
+    <a class="nav-link" href="./index.html" rel="" target="">
  <span class="menu-text">Home</span></a>
   </li>  
   <li class="nav-item">
-    <a class="nav-link" href="./portfolio.html" rel="" target="">
+    <a class="nav-link active" href="./portfolio.html" rel="" target="" aria-current="page">
  <span class="menu-text">Portfolio</span></a>
   </li>  
   <li class="nav-item">
@@ -106,35 +128,63 @@ ul.task-list li input[type="checkbox"] {
 <div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
 <!-- sidebar -->
 <!-- margin-sidebar -->
-    
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">On this page</h2>
+   
+  <ul>
+  <li><a href="#quantifying-heterogeneity-of-discrimination-in-the-canadian-labor-market" id="toc-quantifying-heterogeneity-of-discrimination-in-the-canadian-labor-market" class="nav-link active" data-scroll-target="#quantifying-heterogeneity-of-discrimination-in-the-canadian-labor-market">Quantifying Heterogeneity of Discrimination in the Canadian Labor Market</a></li>
+  <li><a href="#vancouver-crime-analysis" id="toc-vancouver-crime-analysis" class="nav-link" data-scroll-target="#vancouver-crime-analysis">Vancouver Crime Analysis</a></li>
+  <li><a href="#uk-tax-policy-analysis" id="toc-uk-tax-policy-analysis" class="nav-link" data-scroll-target="#uk-tax-policy-analysis">UK Tax Policy Analysis</a></li>
+  </ul>
+</nav>
+    </div>
 <!-- main -->
-<div class="quarto-about-jolla">
-  <img src="media/BabyPudding.jpg" class="about-image
-  round " style="height: 18em; width: 18em;">
- <header id="title-block-header" class="quarto-title-block default">
+<main class="content" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default">
 <div class="quarto-title">
-<h1 class="title">Home</h1>
+<h1 class="title">Portfolio</h1>
+<p class="subtitle lead">My projects and analyses are displayed here. I mainly focus on economic topics, and the coding is done primarily with R.</p>
 </div>
+
+
+
 <div class="quarto-title-meta">
+
+    
+  
+    
   </div>
-</header><main class="content" id="quarto-document-content">
-<p>Welcome to my site! I’m Stephen Min, a recent graduate from the MA in Economics program at Simon Fraser University. If you’re interested, take a look at my <a href="./portfolio.html">portfolio</a> and <a href="./posts.html">blog posts</a> (to be done).</p>
+  
+
+</header>
+
+<section id="quantifying-heterogeneity-of-discrimination-in-the-canadian-labor-market" class="level1">
+<h1>Quantifying Heterogeneity of Discrimination in the Canadian Labor Market</h1>
+<p>This is a mini-research paper that was done as my capstone project for the MA in economics at Simon Fraser University. I applied a causal machine learning algorithm (causal forest) to a dataset from <span class="citation" data-cites="oreopoulos2011">Oreopoulos (<a href="#ref-oreopoulos2011" role="doc-biblioref">2011</a>)</span> that contains information on artificial resumes that were sent out to Canadian employers roughly 10 years ago. I used various transformations and visualizations of the algorithm outputs to quantify how different groups of minorities are impacted by discrimination in the labor market.</p>
+<p><a href="files/899_Paper.pdf" class="btn btn-outline-primary">Link to paper <i class="fa-solid fa-link" aria-label="link"></i></a> <a href="https://github.com/TopologicalDonut/My-Projects/tree/main/Master's%20Paper" class="btn btn-outline-primary">Source code <i class="fa-brands fa-github" aria-label="github"></i></a></p>
+</section>
+<section id="vancouver-crime-analysis" class="level1">
+<h1>Vancouver Crime Analysis</h1>
+<p>This is an analysis of how daylight savings time (DST) affects crime in Vancouver. Inspired by <span class="citation" data-cites="doleac2015">Doleac and Sanders (<a href="#ref-doleac2015" role="doc-biblioref">2015</a>)</span>, I applied a regression discontinuity design with the running variable being days from DST.</p>
+</section>
+<section id="uk-tax-policy-analysis" class="level1">
+<h1>UK Tax Policy Analysis</h1>
+<p>This is an analysis of how the 2021 UK tampon tax abolition affected tampon prices using an event study. I used a regression with ARIMA errors to account for the time series nature of price data.</p>
 
 
-</main> 
-  <hr class="about-sep">
-   <div class="about-links">
-  <a href="https://github.com/TopologicalDonut" class="about-link" rel="" target="">
-    <i class="bi bi-github"></i>
-     <span class="about-link-text">GitHub</span>
-  </a>
-  <a href="mailto:stephenmin31@gmail.com" class="about-link" rel="" target="">
-    <i class="bi bi-envelope"></i>
-     <span class="about-link-text">Email</span>
-  </a>
+
+</section>
+
+<div id="quarto-appendix" class="default"><section class="quarto-appendix-contents" role="doc-bibliography"><h2 class="anchored quarto-appendix-heading">References</h2><div id="refs" class="references csl-bib-body hanging-indent" role="list">
+<div id="ref-doleac2015" class="csl-entry" role="listitem">
+Doleac, Jennifer L., and Nicholas J. Sanders. 2015. <span>“Under the Cover of Darkness: How Ambient Light Influences Criminal Activity.”</span> <em>Review of Economics and Statistics</em> 97 (5): 1093–103. <a href="https://doi.org/10.1162/rest_a_00547">https://doi.org/10.1162/rest_a_00547</a>.
 </div>
+<div id="ref-oreopoulos2011" class="csl-entry" role="listitem">
+Oreopoulos, Philip. 2011. <span>“Why Do Skilled Immigrants Struggle in the Labor Market? A Field Experiment with Thirteen Thousand Resumes.”</span> <em>American Economic Journal: Economic Policy</em> 3 (4): 148–71. <a href="https://doi.org/10.1257/pol.3.4.148">https://doi.org/10.1257/pol.3.4.148</a>.
 </div>
- <!-- /main -->
+</div></section></div></main> <!-- /main -->
 <script id="quarto-html-after-body" type="application/javascript">
 window.document.addEventListener("DOMContentLoaded", function (event) {
   const toggleBodyColorMode = (bsSheetEl) => {
@@ -270,6 +320,13 @@ window.document.addEventListener("DOMContentLoaded", function (event) {
   } else {
     toggleColorMode(false);
   }
+  const icon = "";
+  const anchorJS = new window.AnchorJS();
+  anchorJS.options = {
+    placement: 'right',
+    icon: icon
+  };
+  anchorJS.add('.anchored');
   const isCodeAnnotation = (el) => {
     for (const clz of el.classList) {
       if (clz.startsWith('code-annotation-')) {                     
