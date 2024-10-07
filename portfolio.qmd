@@ -14,6 +14,10 @@ This is a mini-research paper that was done as my capstone project for the MA in
 
 This is an analysis of how daylight savings time (DST) affects crime in Vancouver. Inspired by @doleac2015, I applied a regression discontinuity design with the running variable being days from DST.
 
+[Link to report {{< fa link >}}](files/DST_Report.pdf){.btn .btn-outline-primary} [Source code {{< fa brands github >}}](https://github.com/TopologicalDonut/Vancouver-Crime-Analysis){.btn .btn-outline-primary}
+
 # UK Tax Policy Analysis
 
 This is an analysis of how the 2021 UK tampon tax abolition affected tampon prices using an event study. I used a regression with ARIMA errors to account for the time series nature of price data.
+
+[Link to report {{< fa link >}}](files/UK_Report.pdf){.btn .btn-outline-primary} [Source code {{< fa brands github >}}](https://github.com/TopologicalDonut/UK-Tax-Analysis){.btn .btn-outline-primary}
