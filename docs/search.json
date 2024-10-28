@@ -18,6 +18,20 @@
     "href": "posts.html",
     "title": "Posts",
     "section": "",
-    "text": "No matching items"
+    "text": "How Does Daylight Savings Time Affect Crime in Vancouver?\n\n\n\n\n\nAnalyzing the effect of DST on crime using regression discontinuity.\n\n\n\n\n\n\nOct 27, 2024\n\n\nStephen Min\n\n\n\n\n\n\nNo matching items"
+  },
+  {
+    "objectID": "posts/Vancouver_DST/index.html",
+    "href": "posts/Vancouver_DST/index.html",
+    "title": "How Does Daylight Savings Time Affect Crime in Vancouver?",
+    "section": "",
+    "text": "All the data and raw code of this post can be found here\nMost of us probably hate Daylight Savings Time (DST) – at least, I know I certainly do. A natural question that I’ve found myself asking is whether there’s any benefit to DST aside from its intended purpose.\nIt turns out that some researchers have had the same question. Doleac and Sanders (2015) found that DST caused a notable decrease in crime rates in the United States. Unfortunately, the results likely cannot be generalized to outside the United States since the mechanism through which DST affects crime rates is by increasing the average amount of ambient light during a typical day. This might lead to a higher chance of criminals being caught, thus potentially lowering crime rates. However, it’s also possible that this higher level of ambient light causes people to spend more time outdoors, resulting in more potential victims for criminals. There’s many other reasons why we might not see a decrease in crime rates from DST in other countries as well: different baseline levels of ambient light, different infrastructure, different crime patterns, and so on.\nSince I happen to live in Vancouver, I’ll use the methodology of Doleac and Sanders (2015) to analyze whether DST has a similar effect on crime rates in Vancouver.\nCode\nlibrary(tidyverse)\nlibrary(lubridate)\nlibrary(patchwork)\nlibrary(kableExtra)\nlibrary(broom)\nlibrary(quartoExtra)"
+  },
+  {
+    "objectID": "posts/Vancouver_DST/index.html#footnotes",
+    "href": "posts/Vancouver_DST/index.html#footnotes",
+    "title": "How Does Daylight Savings Time Affect Crime in Vancouver?",
+    "section": "Footnotes",
+    "text": "Footnotes\n\n\nThis is a “sharp” RDD because there is a clear cutoff where all days after are affected by DST.↩︎\nThe RDD would ensure that estimates of the effect of DST are unbiased even when not accounting for weather, but including weather variables can improve the precision of our estimate.↩︎\nThe violent crime estimate displays 0 since it was rounded to 3 decimal places.↩︎\nThis is a joke – dealing with DST is an easy trade-off for lower crime.↩︎"
   }
 ]

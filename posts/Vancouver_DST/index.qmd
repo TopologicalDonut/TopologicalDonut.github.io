@@ -14,7 +14,7 @@ format:
     code-fold: true
     code-tools: true
     code-overflow: wrap
-draft: true
+draft: false
 bibliography: references.bib
 ---
 
@@ -29,7 +29,6 @@ Since I happen to live in Vancouver, I'll use the methodology of @doleac2015 to 
 ```{r setup}
 library(tidyverse)
 library(lubridate)
-library(ggplot2)
 library(patchwork)
 library(kableExtra)
 library(broom)
@@ -87,9 +86,9 @@ Note that the units for rainfall are mm, and Sunday is considered the first day 
 
 RDD happens to be easy to visualize, so I'll show some preliminary graphs before presenting an exact estimate of the effect of DST on crime rates. If there is a notable effect, then we would expect to see a "jump" in crime rates once DST starts.
 
-```{r fig-rdd}
+```{r}
 #| label: fig-rdd
-#| fig-cap: Graphs of the average crime rate per 100,000 people each day 60 days before and after the start of DST.
+#| fig-cap: "Graphs of the average crime rate per 100,000 people each day 60 days before and after the start of DST."
 #| classes: dark-light
 
 darkmode_theme_set(
@@ -161,7 +160,7 @@ kbl(coef_table,
   add_header_above(c(" " = 1, "Statistics" = 4))
 ```
 
-Our estimates confirm the intuition from @fig-rdd. Both estimates are close to 0,[^3] and the p-values suggest that it's highly likely to see estimates of this magnitude under the null hypothesis that there is no effect. In other words, we would expect to see these results if DST has no effect on crime in Vancouver.
+Our estimates confirm the intuition from the graphs. Both estimates are close to 0,[^3] and the p-values suggest that it's highly likely to see estimates of this magnitude under the null hypothesis that there is no effect. In other words, we would expect to see these results if DST has no effect on crime in Vancouver.
 
 [^3]: The violent crime estimate displays 0 since it was rounded to 3 decimal places.
 
