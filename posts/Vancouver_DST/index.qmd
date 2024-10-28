@@ -1,24 +1,231 @@
 ---
 title: "How Does Daylight Savings Time Affect Crime in Vancouver?"
-description: "placeholder"
+description: "Analyzing the effect of DST on crime using regression discontinuity."
 author:
   - name: Stephen Min
+date: 2024-10-27
 execute:
   cache: true
   message: false
   warning: false
 format:
   html:
+    html-math-method: katex
     code-fold: true
     code-tools: true
     code-overflow: wrap
 draft: true
+bibliography: references.bib
 ---
 
-blah blah
+*All the data and raw code of this post can be found [here](https://github.com/TopologicalDonut/Vancouver-Crime-Analysis)*
 
+Most of us probably hate Daylight Savings Time (DST) – at least, I know I certainly do. A natural question that I've found myself asking is whether there's any benefit to DST aside from its intended purpose.
 
-```{r}
+It turns out that some researchers have had the same question. @doleac2015 found that DST caused a notable decrease in crime rates in the United States. Unfortunately, the results likely cannot be generalized to outside the United States since the mechanism through which DST affects crime rates is by increasing the average amount of ambient light during a typical day. This might lead to a higher chance of criminals being caught, thus potentially lowering crime rates. However, it’s also possible that this higher level of ambient light causes people to spend more time outdoors, resulting in more potential victims for criminals. There's many other reasons why we might not see a decrease in crime rates from DST in other countries as well: different baseline levels of ambient light, different infrastructure, different crime patterns, and so on.
+
+Since I happen to live in Vancouver, I'll use the methodology of @doleac2015 to analyze whether DST has a similar effect on crime rates in Vancouver.
+
+```{r setup}
 library(tidyverse)
-test <- read_csv("https://raw.githubusercontent.com/TopologicalDonut/My-Projects/refs/heads/main/Vancouver%20Crime%20Analysis/Data/Processed/merged_data_clean.csv")
+library(lubridate)
+library(ggplot2)
+library(patchwork)
+library(kableExtra)
+library(broom)
+library(quartoExtra)
 ```
+
+# TL;DR
+
+Using a regression discontinuity design, I find that DST likely has no effect on crime in Vancouver. These results are robust to changing the range of days around DST that are considered and to a different functional form.
+
+# The Methodology
+
+@doleac2015 use what's known as a *sharp regression discontinuity design (RDD)*. The basic idea is to compare a small range of days before and after the start of DST to see if there's any noticeable change in crime rates.[^1] For this method to be valid, we would need crime rates within this range of DST to be "as good as random." In other words, we're assuming that there's nothing that would cause a systematic change in the behavior of criminals when DST starts.
+
+[^1]: This is a "sharp" RDD because there is a clear cutoff where *all* days after are affected by DST.
+
+You might question whether this is a reasonable assumption to make – would it really be the case that crime rates are effectively randomly distributed around the start of DST? You would be right to do so. @doleac2015 point out that DST always starts on a Sunday, so we would need to account for this using day-of-week fixed effects. Weather patterns also influence crime rates, so it would be a good idea, though not strictly necessary, to also account for them.[^2]
+
+[^2]: The RDD would ensure that estimates of the effect of DST are unbiased even when not accounting for weather, but including weather variables can improve the precision of our estimate.
+
+Formally, we would estimate the effect of DST on crime rates with the following equation: $$
+crime = \alpha + \beta_1 days + \beta_2 DST + \beta_3 DST*days + \delta W + \gamma_{dow}
+$$ {#eq-rdd} where $days$ is the number of days from the start of DST, $DST$ is a dummy variable equal to 0 before the start of DST and 1 after, $W$ refers to weather variables, and $\gamma_{dow}$ are day-of-week fixed effects. The coefficient in front of $DST$ is what we are interested in. I will first use a 60 day range around the start of DST, but later on I'll alter the range as a robustness check on the initial results. aaa
+
+# The Data
+
+I've gathered crime data from the [Vancouver Police Department website](https://geodash.%20vpd.ca/opendata/) and weather data from the [Vancouver Weatherstats website](https://vancouver.weatherstats.ca/). Here's a table showing some of the data after merging and wrangling everything.
+
+```{r data}
+merged_data_clean <- read_csv("https://raw.githubusercontent.com/TopologicalDonut/My-Projects/refs/heads/main/Vancouver%20Crime%20Analysis/Data/Processed/merged_data_clean.csv")
+
+# Show first 10 rows of cleaned data
+data_summary <- merged_data_clean %>%
+  select(date, num_property_crime_perht, num_violent_crime_perht, 
+         avg_temperature, rain, days_from_dst, dst_dummy, day_of_week) %>%
+  head(10)  
+
+kbl(data_summary,
+    col.names = (c("Date", "Property Crime per 100k", "Violent Crime per 100k",
+                   "Average Temperature", "Rain", "Days from DST", "DST Dummy",
+                   "Day of Week")),
+    align = c('l', 'c', 'c', 'c', 'c', 'c', 'c', 'c'),
+    booktabs = T,
+    linesep = "",
+    digits = 3,
+    caption = "First 10 Rows of Cleaned Data") %>%
+  column_spec(1, width = "8em") %>%
+  column_spec(2, width = "8em") %>%
+  column_spec(3, width = "8em")
+```
+
+Note that the units for rainfall are mm, and Sunday is considered the first day of the week for the Day of Week column. The raw crime data was split into various types of theft, homicide, and offences against another person. I combined the crime into two main categories: property and violent.
+
+# The Results
+
+RDD happens to be easy to visualize, so I'll show some preliminary graphs before presenting an exact estimate of the effect of DST on crime rates. If there is a notable effect, then we would expect to see a "jump" in crime rates once DST starts.
+
+```{r fig-rdd}
+#| label: fig-rdd
+#| fig-cap: Graphs of the average crime rate per 100,000 people each day 60 days before and after the start of DST.
+#| classes: dark-light
+
+darkmode_theme_set(
+  dark = ggthemes::theme_stata(scheme = "s1rcolor"),
+  light = ggthemes::theme_stata(scheme = "s1color")
+)
+
+# Grouping crime into average per day so that the graphs are readable. Otherwise there'd be too many data points.
+avg_crime_by_day <- merged_data_clean %>%
+  group_by(days_from_dst, dst_dummy) %>%
+  summarise(
+    avg_property_crime = mean(num_property_crime_perht),
+    avg_violent_crime = mean(num_violent_crime_perht),
+    .groups = "drop"
+  )
+
+property_crime_plot <- ggplot(avg_crime_by_day, aes(x = days_from_dst, avg_property_crime)) +
+  geom_point(alpha = 0.5, colour = "#e69a0e") +
+  geom_smooth(data = filter(avg_crime_by_day, dst_dummy == 0), 
+              aes(x = days_from_dst, y = avg_property_crime), se = FALSE, colour = "#a011ed", linewidth = 0.5) +
+  geom_smooth(data = filter(avg_crime_by_day, dst_dummy == 1), 
+              aes(x = days_from_dst, y = avg_property_crime), se = FALSE, colour = "red", linewidth = 0.5) +
+  geom_vline(xintercept = 0, linetype = "dashed", colour = "darkslategrey") +
+  labs(title = "Avg Property Crimes Around DST", x = "Days from DST Start", y = "Property Crimes per 100k")
+
+violent_crime_plot <- ggplot(avg_crime_by_day, aes(x = days_from_dst, avg_violent_crime)) +
+  geom_point(alpha = 0.5, colour = "#e69a0e") +
+  geom_smooth(data = filter(avg_crime_by_day, dst_dummy == 0), 
+              aes(x = days_from_dst, y = avg_violent_crime), se = FALSE, colour = "#a011ed", linewidth = 0.5) +
+  geom_smooth(data = filter(avg_crime_by_day, dst_dummy == 1), 
+              aes(x = days_from_dst, y = avg_violent_crime), se = FALSE, colour = "red", linewidth = 0.5) +
+  geom_vline(xintercept = 0, linetype = "dashed", colour = "darkslategrey") +
+  labs(title = "Avg Violent Crimes Around DST", x = "Days from DST Start", y = "Violent Crimes per 100k")
+
+property_crime_plot / violent_crime_plot
+```
+
+Based on the graphs, it seems like DST doesn't have any effect on crime rates in Vancouver. However, this graph doesn't include day-of-week fixed effects, so we need to use @eq-rdd to get a proper estimate of the effect of DST.
+
+```{r model estimation}
+
+run_model <- function(outcome, bandwidth) {
+  formula <- as.formula(paste(outcome, "~ days_from_dst*dst_dummy + day_of_week + rain + avg_temperature"))
+  lm(formula, data = merged_data_clean, subset = abs(days_from_dst) <= bandwidth)
+}
+
+model_property <- run_model("num_property_crime_perht", 60)
+model_violent <- run_model("num_violent_crime_perht", 60)
+
+coef_property <- tidy(model_property) %>% 
+  filter(term == "dst_dummy") %>% 
+  select(estimate, std.error, statistic, p.value)
+
+coef_violent <- tidy(model_violent) %>% 
+  filter(term == "dst_dummy") %>% 
+  select(estimate, std.error, statistic, p.value)
+
+coef_table <- rbind(
+  data.frame(Crime = "Property", coef_property),
+  data.frame(Crime = "Violent", coef_violent)
+)
+
+kbl(coef_table, 
+    col.names = c("Crime Type", "Estimate", "Std. Error", "t-statistic", "p-value"),
+    align = c('l', 'c', 'c', 'c', 'c'),
+    digits = 3,
+    caption = "Effect of DST on Crime per 100k",
+    booktabs = T) %>%
+  add_header_above(c(" " = 1, "Statistics" = 4))
+```
+
+Our estimates confirm the intuition from @fig-rdd. Both estimates are close to 0,[^3] and the p-values suggest that it's highly likely to see estimates of this magnitude under the null hypothesis that there is no effect. In other words, we would expect to see these results if DST has no effect on crime in Vancouver.
+
+[^3]: The violent crime estimate displays 0 since it was rounded to 3 decimal places.
+
+# Robustness Checks
+
+It's possible that the functional form of @eq-rdd does not adequately capture the true effect of DST on crime. It's also possible that the 60 day range I chose is too wide, thus biasing the results. To check whether either of these are actual problems, I'll run some additional analyses with a cubic functional form: $$
+\begin{aligned}
+crime &= \alpha + \beta_1 days + \beta_2 days^2 + \beta_3 days^3 + \beta_4 DST
+\\ &+ (\beta_5 days + \beta_6 days^2 + \beta_7 days^3)*DST + \delta W + \gamma_{dow}
+\end{aligned}
+$$ along with a 14 day range of days around the start of DST with the default @eq-rdd.
+
+```{r robustness check}
+
+model_property_cubic <- lm(num_property_crime_perht ~ poly(days_from_dst, 3, raw=TRUE)*dst_dummy +
+                             day_of_week + rain + avg_temperature, data = merged_data_clean)
+model_violent_cubic <- lm(num_violent_crime_perht ~ poly(days_from_dst, 3, raw=TRUE)*dst_dummy 
+                           + day_of_week + rain + avg_temperature, data = merged_data_clean)
+model_property_altband <- run_model("num_property_crime_perht", 14)
+model_violent_altband <- run_model("num_violent_crime_perht", 14)
+
+extract_dst_coef <- function(model, model_name) {
+  tidy(model) %>% 
+    filter(term == "dst_dummy") %>% 
+    select(estimate, std.error, statistic, p.value) %>%
+    mutate(Model = model_name)
+}
+
+coef_table <- bind_rows(
+  extract_dst_coef(model_violent_cubic, "Violent - Cubic"),
+  extract_dst_coef(model_property_cubic, "Property - Cubic"),
+  extract_dst_coef(model_violent_altband, "Violent - 14 Day Bandwidth"),
+  extract_dst_coef(model_property_altband, "Property - 14 Day Bandwidth")
+  ) %>%
+  mutate(Crime_Type = ifelse(grepl("Violent", Model), "Violent", "Property"),
+         Model_Type = gsub("Violent - |Property - ", "", Model)) %>%
+  select(Model_Type, Crime_Type,everything(), -Model)
+
+kbl(coef_table[2:6], 
+      col.names = c("Crime Type", "Estimate", "Std. Error", "t-statistic", "p-value"),
+      digits = 3,
+      align = c('l', 'c', 'c', 'c', 'c'),
+      caption = "Effect of DST Across Different Models") %>%
+  pack_rows("Cubic Model", 1, 2) %>%
+  pack_rows("14 Day Bandwidth", 3, 4) %>%
+  add_header_above(c(" " = 1, "Statistics" = 4))
+```
+
+As we can see, none of the other models have significant results, and the estimates for all the models are fairly close. It seems like DST indeed has little to no effect on crime in Vancouver.
+
+# Conclusion
+
+To recap, I've applied the sharp RDD methodology of @doleac2015 to Vancouver, yielding results that contrast with previous findings from the United States:
+
+1.  There is no statistically significant impact of DST on either property or violent crime rates in Vancouver.
+
+2.  This lack of effect persists across different model specifications and bandwidths (range of days), suggesting robust results.
+
+A couple takeaways from these results:
+
+1.  **Local Context Matters**: This might be a bit obvious for anyone who understands that RDD estimates local treatment effects, but to reiterate – the discrepancy between these results and those of @doleac2015 underscores the importance of local context in understanding the relationship between ambient light and crime. Factors such as baseline daylight hours, urban infrastructure, and social patterns may all play a role in mediating the effect of DST on criminal activity.
+
+2.  **Policy Implications**: For policymakers in Vancouver considering the potential benefits or drawbacks of DST, these results suggest that crime reduction should not be considered a relevant factor in these deliberations. The lack of a detectable effect on crime rates indicates that other considerations, such as energy usage or public health, may be more relevant to DST policy decisions.
+
+And of course, I'm personally happy that there is one less reason to have DST if we're considering its effects in Vancouver.[^4]
+
+[^4]: This is a joke – dealing with DST is an easy trade-off for lower crime.

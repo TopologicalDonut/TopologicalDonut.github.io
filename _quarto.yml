@@ -1,23 +1,23 @@
 project:
   type: website
   output-dir: docs
-
 website:
-  title: "Stephen Min"
+  title: Stephen Min
   navbar:
     right:
-      - href: index.qmd
-        text: Home
-      - portfolio.qmd
-      - posts.qmd
-
+    - href: index.qmd
+      text: Home
+    - portfolio.qmd
+    - posts.qmd
 format:
   html:
     theme:
-      dark: cyborg
-      light: cosmo
+      dark:
+      - cyborg
+      - dark.scss
+      light:
+      - cosmo
+      - light.scss
     css: styles.scss
     toc: true
-
 editor: visual
-
