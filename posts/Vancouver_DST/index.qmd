@@ -51,7 +51,7 @@ You might question whether this is a reasonable assumption to make – would it 
 
 Formally, we would estimate the effect of DST on crime rates with the following equation: $$
 crime = \alpha + \beta_1 days + \beta_2 DST + \beta_3 DST*days + \delta W + \gamma_{dow}
-$$ {#eq-rdd} where $days$ is the number of days from the start of DST, $DST$ is a dummy variable equal to 0 before the start of DST and 1 after, $W$ refers to weather variables, and $\gamma_{dow}$ are day-of-week fixed effects. The coefficient in front of $DST$ is what we are interested in. I will first use a 60 day range around the start of DST, but later on I'll alter the range as a robustness check on the initial results. aaa
+$$ {#eq-rdd} where $days$ is the number of days from the start of DST, $DST$ is a dummy variable equal to 0 before the start of DST and 1 after, $W$ refers to weather variables, and $\gamma_{dow}$ are day-of-week fixed effects. The coefficient in front of $DST$ is what we are interested in. I will first use a 60 day range around the start of DST, but later on I'll alter the range as a robustness check on the initial results.
 
 # The Data
 
