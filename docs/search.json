@@ -32,7 +32,7 @@
     "href": "posts/Vancouver_DST/index.html#footnotes",
     "title": "How Does Daylight Savings Time Affect Crime in Vancouver?",
     "section": "Footnotes",
-    "text": "Footnotes\n\n\nThis is a “sharp” RDD because there is a clear cutoff where all days after are affected by DST.↩︎\nThe RDD would ensure that estimates of the effect of DST are unbiased even when not accounting for weather, but including weather variables can improve the precision of our estimate.↩︎\nThe violent crime estimate displays 0 since it was rounded to 3 decimal places.↩︎\nThis is a joke – dealing with DST is an easy trade-off for lower crime.↩︎"
+    "text": "Footnotes\n\n\nThis is a “sharp” RDD because there is a clear cutoff where all days after are affected by DST.↩︎\nThe RDD would ensure that estimates of the effect of DST are unbiased even when not accounting for weather, but including weather variables can improve the precision of our estimate.↩︎\nThis is a joke – dealing with DST is an easy trade-off for lower crime.↩︎"
   },
   {
     "objectID": "posts/Vancouver_DST/index.html#changelog",

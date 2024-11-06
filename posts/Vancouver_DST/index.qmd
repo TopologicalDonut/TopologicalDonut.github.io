@@ -157,9 +157,7 @@ modelsummary(
 )
 ```
 
-Our estimates confirm the intuition from the graphs. Both estimates are close to 0,[^3] and the confidence intervals suggest that DST has little to no meaningful effect on crime rates in Vancouver.
-
-[^3]: The violent crime estimate displays 0 since it was rounded to 3 decimal places.
+Our estimates confirm the intuition from the graphs. Both estimates are close to 0, and the confidence intervals suggest that DST has little to no meaningful effect on crime rates in Vancouver.
 
 # Robustness Checks
 
@@ -217,6 +215,11 @@ get_models_results <- function(bandwidth) {
 
 all_results <- map_dfr(bandwidths, get_models_results)
 
+darkmode_theme_set(
+  dark = ggthemes::theme_stata(scheme = "s1rcolor"),
+  light = ggthemes::theme_stata(scheme = "s1color")
+)
+
 ggplot(all_results, 
        aes(x = bandwidth, y = estimate, 
            ymin = conf.low, ymax = conf.high,
@@ -249,9 +252,9 @@ A couple takeaways from these results:
 
 2.  **Policy Implications**: For policymakers in Vancouver considering the potential benefits or drawbacks of DST, these results suggest that crime reduction should not be considered a relevant factor in these deliberations. The lack of a detectable effect on crime rates indicates that other considerations, such as energy usage or public health, may be more relevant to DST policy decisions.
 
-And of course, I'm personally happy that there is one less reason to have DST if we're considering its effects in Vancouver.[^4]
+And of course, I'm personally happy that there is one less reason to have DST if we're considering its effects in Vancouver.[^3]
 
-[^4]: This is a joke – dealing with DST is an easy trade-off for lower crime.
+[^3]: This is a joke – dealing with DST is an easy trade-off for lower crime.
 
 ## Changelog
 
