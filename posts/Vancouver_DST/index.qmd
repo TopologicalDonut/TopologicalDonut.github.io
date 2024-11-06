@@ -24,14 +24,16 @@ Most of us probably hate Daylight Savings Time (DST) – at least, I know I cert
 
 It turns out that some researchers have had the same question. @doleac2015 found that DST caused a notable decrease in crime rates in the United States. Unfortunately, the results likely cannot be generalized to outside the United States since the mechanism through which DST affects crime rates is by increasing the average amount of ambient light during a typical day. This might lead to a higher chance of criminals being caught, thus potentially lowering crime rates. However, it’s also possible that this higher level of ambient light causes people to spend more time outdoors, resulting in more potential victims for criminals. There's many other reasons why we might not see a decrease in crime rates from DST in other countries as well: different baseline levels of ambient light, different infrastructure, different crime patterns, and so on.
 
-Since I happen to live in Vancouver, I'll use the methodology of @doleac2015 to analyze whether DST has a similar effect on crime rates in Vancouver.
+Since I happen to live in Vancouver, I'll use a similar methodology to that of @doleac2015 to analyze whether DST has a comparable effect on crime rates in Vancouver.
 
 ```{r setup}
 library(tidyverse)
 library(lubridate)
-library(patchwork)
 library(kableExtra)
 library(broom)
+library(modelsummary)
+library(sandwich)
+library(lmtest)
 library(quartoExtra)
 ```
 
@@ -41,7 +43,7 @@ Using a regression discontinuity design, I find that DST likely has no effect on
 
 # The Methodology
 
-@doleac2015 use what's known as a *sharp regression discontinuity design (RDD)*. The basic idea is to compare a small range of days before and after the start of DST to see if there's any noticeable change in crime rates.[^1] For this method to be valid, we would need crime rates within this range of DST to be "as good as random." In other words, we're assuming that there's nothing that would cause a systematic change in the behavior of criminals when DST starts.
+@doleac2015 use what's known as a *sharp regression discontinuity design (RDD)*. The basic idea is to compare a small range of days before and after the start of DST (the usual terminology for this range is "*bandwidth"*) to see if there's any noticeable change in crime rates.[^1] For this method to be valid, we would need crime rates within this range of DST to be "as good as random." In other words, we're assuming that there's nothing that would cause a systematic change in the behavior of criminals when DST starts.
 
 [^1]: This is a "sharp" RDD because there is a clear cutoff where *all* days after are affected by DST.
 
@@ -51,7 +53,7 @@ You might question whether this is a reasonable assumption to make – would it 
 
 Formally, we would estimate the effect of DST on crime rates with the following equation: $$
 crime = \alpha + \beta_1 days + \beta_2 DST + \beta_3 DST*days + \delta W + \gamma_{dow}
-$$ {#eq-rdd} where $days$ is the number of days from the start of DST, $DST$ is a dummy variable equal to 0 before the start of DST and 1 after, $W$ refers to weather variables, and $\gamma_{dow}$ are day-of-week fixed effects. The coefficient in front of $DST$ is what we are interested in. I will first use a 60 day range around the start of DST, but later on I'll alter the range as a robustness check on the initial results.
+$$ {#eq-rdd} where $days$ is the number of days from the start of DST, $DST$ is a dummy variable equal to 0 before the start of DST and 1 after, $W$ refers to weather variables, and $\gamma_{dow}$ are day-of-week fixed effects. The coefficient in front of $DST$ is what we are interested in. The choice of bandwidth is a bit arbitrary because we want an unbiased yet reasonably certain estimate of the effect of DST, so I will first use the bandwidth chosen by @doleac2015 (21 days), but later on I'll alter the bandwidth as a robustness check on the initial results.
 
 # The Data
 
@@ -105,111 +107,146 @@ avg_crime_by_day <- merged_data_clean %>%
     .groups = "drop"
   )
 
-property_crime_plot <- ggplot(avg_crime_by_day, aes(x = days_from_dst, avg_property_crime)) +
-  geom_point(alpha = 0.5, colour = "#e69a0e") +
-  geom_smooth(data = filter(avg_crime_by_day, dst_dummy == 0), 
-              aes(x = days_from_dst, y = avg_property_crime), se = FALSE, colour = "#a011ed", linewidth = 0.5) +
-  geom_smooth(data = filter(avg_crime_by_day, dst_dummy == 1), 
-              aes(x = days_from_dst, y = avg_property_crime), se = FALSE, colour = "red", linewidth = 0.5) +
-  geom_vline(xintercept = 0, linetype = "dashed", colour = "darkslategrey") +
-  labs(title = "Avg Property Crimes Around DST", x = "Days from DST Start", y = "Property Crimes per 100k")
+# Need long format for graphs
+avg_crime_by_day_long <- avg_crime_by_day %>%
+  pivot_longer(
+    cols = c(avg_property_crime, avg_violent_crime),
+    names_to = "crime_type",
+    values_to = "crime_rate"
+  ) %>%
+  mutate(crime_type = case_when(
+    crime_type == "avg_property_crime" ~ "Property Crime",
+    crime_type == "avg_violent_crime" ~ "Violent Crime"
+  ))
 
-violent_crime_plot <- ggplot(avg_crime_by_day, aes(x = days_from_dst, avg_violent_crime)) +
+ggplot(avg_crime_by_day_long, aes(x = days_from_dst, y = crime_rate)) +
   geom_point(alpha = 0.5, colour = "#e69a0e") +
-  geom_smooth(data = filter(avg_crime_by_day, dst_dummy == 0), 
-              aes(x = days_from_dst, y = avg_violent_crime), se = FALSE, colour = "#a011ed", linewidth = 0.5) +
-  geom_smooth(data = filter(avg_crime_by_day, dst_dummy == 1), 
-              aes(x = days_from_dst, y = avg_violent_crime), se = FALSE, colour = "red", linewidth = 0.5) +
+  geom_smooth(data = filter(avg_crime_by_day_long, dst_dummy == 0), 
+              se = FALSE, colour = "#a011ed", linewidth = 0.5) +
+  geom_smooth(data = filter(avg_crime_by_day_long, dst_dummy == 1), 
+              se = FALSE, colour = "red", linewidth = 0.5) +
   geom_vline(xintercept = 0, linetype = "dashed", colour = "darkslategrey") +
-  labs(title = "Avg Violent Crimes Around DST", x = "Days from DST Start", y = "Violent Crimes per 100k")
+  facet_wrap(~crime_type, scales = "free_y", ncol = 1) +
+  labs(x = "Days from DST Start", 
+       y = "Crimes per 100k",
+       title = "Average Rate of Crimes Around DST")
 
-property_crime_plot / violent_crime_plot
 ```
 
 Based on the graphs, it seems like DST doesn't have any effect on crime rates in Vancouver. However, this graph doesn't include day-of-week fixed effects, so we need to use @eq-rdd to get a proper estimate of the effect of DST.
 
 ```{r model estimation}
 
-run_model <- function(outcome, bandwidth) {
+run_model_linear <- function(outcome, bandwidth) {
   formula <- as.formula(paste(outcome, "~ days_from_dst*dst_dummy + day_of_week + rain + avg_temperature"))
   lm(formula, data = merged_data_clean, subset = abs(days_from_dst) <= bandwidth)
 }
 
-model_property <- run_model("num_property_crime_perht", 60)
-model_violent <- run_model("num_violent_crime_perht", 60)
+# 3 week bandwidth for initial results.
+model_property <- run_model_linear("num_property_crime_perht", 21)
+model_violent <- run_model_linear("num_violent_crime_perht", 21)
 
-coef_property <- tidy(model_property) %>% 
-  filter(term == "dst_dummy") %>% 
-  select(estimate, std.error, statistic, p.value)
+# vcov for robust SE.
+coef_property <- tidy(coeftest(model_property, vcov = vcovHC), conf.int = TRUE, conf.level = 0.95)
+coef_violent <- tidy(coeftest(model_violent, vcov = vcovHC), conf.int = TRUE, conf.level = 0.95)
 
-coef_violent <- tidy(model_violent) %>% 
-  filter(term == "dst_dummy") %>% 
-  select(estimate, std.error, statistic, p.value)
-
-coef_table <- rbind(
-  data.frame(Crime = "Property", coef_property),
-  data.frame(Crime = "Violent", coef_violent)
+combined_results <- bind_rows(
+  coef_property %>% 
+    filter(term == "dst_dummy") %>%
+    mutate(crime_type = "Property Crime"),
+  coef_violent %>%
+    filter(term == "dst_dummy") %>%
+    mutate(crime_type = "Violent Crime")
 )
 
-kbl(coef_table, 
-    col.names = c("Crime Type", "Estimate", "Std. Error", "t-statistic", "p-value"),
-    align = c('l', 'c', 'c', 'c', 'c'),
-    digits = 3,
-    caption = "Effect of DST on Crime per 100k",
-    booktabs = T) %>%
-  add_header_above(c(" " = 1, "Statistics" = 4))
+modelsummary(
+  list("Property Crime" = model_property, "Violent Crime" = model_violent),
+  coef_map = c("dst_dummy" = "DST Effect"),
+  vcov = "robust",
+  gof_map = c("nobs", "vcov.type"),
+  statistic = c("conf.int", "s.e. = {std.error}"),
+  stars = TRUE,
+  title = "Effect of DST on Crime per 100k"
+)
 ```
 
-Our estimates confirm the intuition from the graphs. Both estimates are close to 0,[^3] and the p-values suggest that it's highly likely to see estimates of this magnitude under the null hypothesis that there is no effect. In other words, we would expect to see these results if DST has no effect on crime in Vancouver.
+Our estimates confirm the intuition from the graphs. Both estimates are close to 0,[^3] and the confidence intervals suggest that DST has little to no meaningful effect on crime rates in Vancouver.
 
 [^3]: The violent crime estimate displays 0 since it was rounded to 3 decimal places.
 
 # Robustness Checks
 
-It's possible that the functional form of @eq-rdd does not adequately capture the true effect of DST on crime. It's also possible that the 60 day range I chose is too wide, thus biasing the results. To check whether either of these are actual problems, I'll run some additional analyses with a cubic functional form: $$
+It's possible that the functional form of @eq-rdd does not adequately capture the true effect of DST on crime. It's also possible that the 21 day bandwidth I chose does not give good results for whatever reason. To check whether either of these are actual problems, I'll run some additional analyses with a quadratic functional form: $$
 \begin{aligned}
-crime &= \alpha + \beta_1 days + \beta_2 days^2 + \beta_3 days^3 + \beta_4 DST
-\\ &+ (\beta_5 days + \beta_6 days^2 + \beta_7 days^3)*DST + \delta W + \gamma_{dow}
+crime &= \alpha + \beta_1 days + \beta_2 days^2 + \beta_4 DST
+\\ &+ (\beta_5 days + \beta_6 days^2)*DST + \delta W + \gamma_{dow}
 \end{aligned}
-$$ along with a 14 day range of days around the start of DST with the default @eq-rdd.
+$$ along with bandwidths ranging from 2 weeks to 8 weeks.
 
 ```{r robustness check}
+#| label: fig-robust
+#| fig-cap: "Graphs of the estimates of DST on crime rates for different bandwidths and functional forms."
+#| classes: dark-light
 
-model_property_cubic <- lm(num_property_crime_perht ~ poly(days_from_dst, 3, raw=TRUE)*dst_dummy +
-                             day_of_week + rain + avg_temperature, data = merged_data_clean)
-model_violent_cubic <- lm(num_violent_crime_perht ~ poly(days_from_dst, 3, raw=TRUE)*dst_dummy 
-                           + day_of_week + rain + avg_temperature, data = merged_data_clean)
-model_property_altband <- run_model("num_property_crime_perht", 14)
-model_violent_altband <- run_model("num_violent_crime_perht", 14)
-
-extract_dst_coef <- function(model, model_name) {
-  tidy(model) %>% 
-    filter(term == "dst_dummy") %>% 
-    select(estimate, std.error, statistic, p.value) %>%
-    mutate(Model = model_name)
+run_model_quad <- function(outcome, bandwidth) {
+  formula <- as.formula(paste(outcome, "~ poly(days_from_dst, 2, raw=TRUE)*dst_dummy +
+                             day_of_week + rain + avg_temperature"))
+  lm(formula, data = merged_data_clean, subset = abs(days_from_dst) <= bandwidth)
 }
 
-coef_table <- bind_rows(
-  extract_dst_coef(model_violent_cubic, "Violent - Cubic"),
-  extract_dst_coef(model_property_cubic, "Property - Cubic"),
-  extract_dst_coef(model_violent_altband, "Violent - 14 Day Bandwidth"),
-  extract_dst_coef(model_property_altband, "Property - 14 Day Bandwidth")
-  ) %>%
-  mutate(Crime_Type = ifelse(grepl("Violent", Model), "Violent", "Property"),
-         Model_Type = gsub("Violent - |Property - ", "", Model)) %>%
-  select(Model_Type, Crime_Type,everything(), -Model)
+# Bandwidths are the range of days around start of DST.
+bandwidths <- seq(14, 56, by = 7)
 
-kbl(coef_table[2:6], 
-      col.names = c("Crime Type", "Estimate", "Std. Error", "t-statistic", "p-value"),
-      digits = 3,
-      align = c('l', 'c', 'c', 'c', 'c'),
-      caption = "Effect of DST Across Different Models") %>%
-  pack_rows("Cubic Model", 1, 2) %>%
-  pack_rows("14 Day Bandwidth", 3, 4) %>%
-  add_header_above(c(" " = 1, "Statistics" = 4))
+get_models_results <- function(bandwidth) {
+  linear_prop <- run_model_linear("num_property_crime_perht", bandwidth)
+  linear_violent <- run_model_linear("num_violent_crime_perht", bandwidth)
+  quad_prop <- run_model_quad("num_property_crime_perht", bandwidth)
+  quad_violent <- run_model_quad("num_violent_crime_perht", bandwidth)
+  
+  results <- bind_rows(
+    tidy(coeftest(linear_prop, vcov = vcovHC), conf.int = TRUE) %>% 
+      filter(term == "dst_dummy") %>%
+      mutate(crime_type = "Property Crime",
+             model_type = "Linear",
+             bandwidth = bandwidth),
+    tidy(coeftest(linear_violent, vcov = vcovHC), conf.int = TRUE) %>%
+      filter(term == "dst_dummy") %>%
+      mutate(crime_type = "Violent Crime",
+             model_type = "Linear",
+             bandwidth = bandwidth),
+    tidy(coeftest(quad_prop, vcov = vcovHC), conf.int = TRUE) %>% 
+      filter(term == "dst_dummy") %>%
+      mutate(crime_type = "Property Crime",
+             model_type = "Quadratic",
+             bandwidth = bandwidth),
+    tidy(coeftest(quad_violent, vcov = vcovHC), conf.int = TRUE) %>%
+      filter(term == "dst_dummy") %>%
+      mutate(crime_type = "Violent Crime",
+             model_type = "Quadratic",
+             bandwidth = bandwidth)
+  )
+  return(results)
+}
+
+all_results <- map_dfr(bandwidths, get_models_results)
+
+ggplot(all_results, 
+       aes(x = bandwidth, y = estimate, 
+           ymin = conf.low, ymax = conf.high,
+           color = model_type)) +
+  geom_point(position = position_dodge(width = 3)) +
+  geom_errorbar(position = position_dodge(width = 3), width = 2) +
+  geom_hline(yintercept = 0, linetype = "dashed", color = "darkslategrey") +
+  facet_wrap(~crime_type, scales = "free_y") +
+  labs(x = "Bandwidth (Days)",
+       y = "Estimated DST Effect",
+       color = "Model Type",
+       title = "DST Effects Across Different Bandwidths",
+       subtitle = "Point Estimates and 95% Confidence Intervals") +
+  scale_x_continuous(breaks = bandwidths)
 ```
 
-As we can see, none of the other models have significant results, and the estimates for all the models are fairly close. It seems like DST indeed has little to no effect on crime in Vancouver.
+As we can see, the estimates are all fairly close in general. The confidence intervals become wider with smaller bandwidths, and the quadratic model shows more uncertainty - both of which we would expect. It seems like DST indeed has little to no effect on crime in Vancouver.
 
 # Conclusion
 
@@ -228,3 +265,9 @@ A couple takeaways from these results:
 And of course, I'm personally happy that there is one less reason to have DST if we're considering its effects in Vancouver.[^4]
 
 [^4]: This is a joke – dealing with DST is an easy trade-off for lower crime.
+
+## Changelog
+
+-   2024-10-27: Initial post 
+
+-   2024-11-06: Made changelog, changed robustness check methodology, and changed some of the code for graphs and tables.

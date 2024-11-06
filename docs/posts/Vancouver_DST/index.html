@@ -225,7 +225,10 @@ div.csl-indent {
   <li><a href="#the-data" id="toc-the-data" class="nav-link" data-scroll-target="#the-data">The Data</a></li>
   <li><a href="#the-results" id="toc-the-results" class="nav-link" data-scroll-target="#the-results">The Results</a></li>
   <li><a href="#robustness-checks" id="toc-robustness-checks" class="nav-link" data-scroll-target="#robustness-checks">Robustness Checks</a></li>
-  <li><a href="#conclusion" id="toc-conclusion" class="nav-link" data-scroll-target="#conclusion">Conclusion</a></li>
+  <li><a href="#conclusion" id="toc-conclusion" class="nav-link" data-scroll-target="#conclusion">Conclusion</a>
+  <ul class="collapse">
+  <li><a href="#changelog" id="toc-changelog" class="nav-link" data-scroll-target="#changelog">Changelog</a></li>
+  </ul></li>
   </ul>
 </nav>
     </div>
@@ -238,16 +241,18 @@ div.csl-indent {
 <p><em>All the data and raw code of this post can be found <a href="https://github.com/TopologicalDonut/Vancouver-Crime-Analysis">here</a></em></p>
 <p>Most of us probably hate Daylight Savings Time (DST) – at least, I know I certainly do. A natural question that I’ve found myself asking is whether there’s any benefit to DST aside from its intended purpose.</p>
 <p>It turns out that some researchers have had the same question. <span class="citation" data-cites="doleac2015">Doleac and Sanders (<a href="#ref-doleac2015" role="doc-biblioref">2015</a>)</span> found that DST caused a notable decrease in crime rates in the United States. Unfortunately, the results likely cannot be generalized to outside the United States since the mechanism through which DST affects crime rates is by increasing the average amount of ambient light during a typical day. This might lead to a higher chance of criminals being caught, thus potentially lowering crime rates. However, it’s also possible that this higher level of ambient light causes people to spend more time outdoors, resulting in more potential victims for criminals. There’s many other reasons why we might not see a decrease in crime rates from DST in other countries as well: different baseline levels of ambient light, different infrastructure, different crime patterns, and so on.</p>
-<p>Since I happen to live in Vancouver, I’ll use the methodology of <span class="citation" data-cites="doleac2015">Doleac and Sanders (<a href="#ref-doleac2015" role="doc-biblioref">2015</a>)</span> to analyze whether DST has a similar effect on crime rates in Vancouver.</p>
+<p>Since I happen to live in Vancouver, I’ll use a similar methodology to that of <span class="citation" data-cites="doleac2015">Doleac and Sanders (<a href="#ref-doleac2015" role="doc-biblioref">2015</a>)</span> to analyze whether DST has a comparable effect on crime rates in Vancouver.</p>
 <div class="cell">
 <details>
 <summary>Code</summary>
 <div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(tidyverse)</span>
 <span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(lubridate)</span>
-<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(patchwork)</span>
-<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(kableExtra)</span>
-<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(broom)</span>
-<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(quartoExtra)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(kableExtra)</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(broom)</span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(modelsummary)</span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(sandwich)</span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(lmtest)</span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(quartoExtra)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </details>
 </div>
 <section id="tldr" class="level1">
@@ -256,11 +261,11 @@ div.csl-indent {
 </section>
 <section id="the-methodology" class="level1">
 <h1>The Methodology</h1>
-<p><span class="citation" data-cites="doleac2015">Doleac and Sanders (<a href="#ref-doleac2015" role="doc-biblioref">2015</a>)</span> use what’s known as a <em>sharp regression discontinuity design (RDD)</em>. The basic idea is to compare a small range of days before and after the start of DST to see if there’s any noticeable change in crime rates.<a href="#fn1" class="footnote-ref" id="fnref1" role="doc-noteref"><sup>1</sup></a> For this method to be valid, we would need crime rates within this range of DST to be “as good as random.” In other words, we’re assuming that there’s nothing that would cause a systematic change in the behavior of criminals when DST starts.</p>
+<p><span class="citation" data-cites="doleac2015">Doleac and Sanders (<a href="#ref-doleac2015" role="doc-biblioref">2015</a>)</span> use what’s known as a <em>sharp regression discontinuity design (RDD)</em>. The basic idea is to compare a small range of days before and after the start of DST (the usual terminology for this range is “<em>bandwidth”</em>) to see if there’s any noticeable change in crime rates.<a href="#fn1" class="footnote-ref" id="fnref1" role="doc-noteref"><sup>1</sup></a> For this method to be valid, we would need crime rates within this range of DST to be”as good as random.” In other words, we’re assuming that there’s nothing that would cause a systematic change in the behavior of criminals when DST starts.</p>
 <p>You might question whether this is a reasonable assumption to make – would it really be the case that crime rates are effectively randomly distributed around the start of DST? You would be right to do so. <span class="citation" data-cites="doleac2015">Doleac and Sanders (<a href="#ref-doleac2015" role="doc-biblioref">2015</a>)</span> point out that DST always starts on a Sunday, so we would need to account for this using day-of-week fixed effects. Weather patterns also influence crime rates, so it would be a good idea, though not strictly necessary, to also account for them.<a href="#fn2" class="footnote-ref" id="fnref2" role="doc-noteref"><sup>2</sup></a></p>
 <p>Formally, we would estimate the effect of DST on crime rates with the following equation: <span id="eq-rdd"><span class="math display">
 crime = \alpha + \beta_1 days + \beta_2 DST + \beta_3 DST*days + \delta W + \gamma_{dow}
-\tag{1}</span></span> where <span class="math inline">days</span> is the number of days from the start of DST, <span class="math inline">DST</span> is a dummy variable equal to 0 before the start of DST and 1 after, <span class="math inline">W</span> refers to weather variables, and <span class="math inline">\gamma_{dow}</span> are day-of-week fixed effects. The coefficient in front of <span class="math inline">DST</span> is what we are interested in. I will first use a 60 day range around the start of DST, but later on I’ll alter the range as a robustness check on the initial results.</p>
+\tag{1}</span></span> where <span class="math inline">days</span> is the number of days from the start of DST, <span class="math inline">DST</span> is a dummy variable equal to 0 before the start of DST and 1 after, <span class="math inline">W</span> refers to weather variables, and <span class="math inline">\gamma_{dow}</span> are day-of-week fixed effects. The coefficient in front of <span class="math inline">DST</span> is what we are interested in. The choice of bandwidth is a bit arbitrary because we want an unbiased yet reasonably certain estimate of the effect of DST, so I will first use the bandwidth chosen by <span class="citation" data-cites="doleac2015">Doleac and Sanders (<a href="#ref-doleac2015" role="doc-biblioref">2015</a>)</span> (21 days), but later on I’ll alter the bandwidth as a robustness check on the initial results.</p>
 </section>
 <section id="the-data" class="level1">
 <h1>The Data</h1>
@@ -434,25 +439,29 @@ crime = \alpha + \beta_1 days + \beta_2 DST + \beta_3 DST*days + \delta W + \gam
 <span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a>    <span class="at">.groups =</span> <span class="st">"drop"</span></span>
 <span id="cb3-13"><a href="#cb3-13" aria-hidden="true" tabindex="-1"></a>  )</span>
 <span id="cb3-14"><a href="#cb3-14" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-15"><a href="#cb3-15" aria-hidden="true" tabindex="-1"></a>property_crime_plot <span class="ot">&lt;-</span> <span class="fu">ggplot</span>(avg_crime_by_day, <span class="fu">aes</span>(<span class="at">x =</span> days_from_dst, avg_property_crime)) <span class="sc">+</span></span>
-<span id="cb3-16"><a href="#cb3-16" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>(<span class="at">alpha =</span> <span class="fl">0.5</span>, <span class="at">colour =</span> <span class="st">"#e69a0e"</span>) <span class="sc">+</span></span>
-<span id="cb3-17"><a href="#cb3-17" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_smooth</span>(<span class="at">data =</span> <span class="fu">filter</span>(avg_crime_by_day, dst_dummy <span class="sc">==</span> <span class="dv">0</span>), </span>
-<span id="cb3-18"><a href="#cb3-18" aria-hidden="true" tabindex="-1"></a>              <span class="fu">aes</span>(<span class="at">x =</span> days_from_dst, <span class="at">y =</span> avg_property_crime), <span class="at">se =</span> <span class="cn">FALSE</span>, <span class="at">colour =</span> <span class="st">"#a011ed"</span>, <span class="at">linewidth =</span> <span class="fl">0.5</span>) <span class="sc">+</span></span>
-<span id="cb3-19"><a href="#cb3-19" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_smooth</span>(<span class="at">data =</span> <span class="fu">filter</span>(avg_crime_by_day, dst_dummy <span class="sc">==</span> <span class="dv">1</span>), </span>
-<span id="cb3-20"><a href="#cb3-20" aria-hidden="true" tabindex="-1"></a>              <span class="fu">aes</span>(<span class="at">x =</span> days_from_dst, <span class="at">y =</span> avg_property_crime), <span class="at">se =</span> <span class="cn">FALSE</span>, <span class="at">colour =</span> <span class="st">"red"</span>, <span class="at">linewidth =</span> <span class="fl">0.5</span>) <span class="sc">+</span></span>
-<span id="cb3-21"><a href="#cb3-21" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_vline</span>(<span class="at">xintercept =</span> <span class="dv">0</span>, <span class="at">linetype =</span> <span class="st">"dashed"</span>, <span class="at">colour =</span> <span class="st">"darkslategrey"</span>) <span class="sc">+</span></span>
-<span id="cb3-22"><a href="#cb3-22" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">title =</span> <span class="st">"Avg Property Crimes Around DST"</span>, <span class="at">x =</span> <span class="st">"Days from DST Start"</span>, <span class="at">y =</span> <span class="st">"Property Crimes per 100k"</span>)</span>
-<span id="cb3-23"><a href="#cb3-23" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-24"><a href="#cb3-24" aria-hidden="true" tabindex="-1"></a>violent_crime_plot <span class="ot">&lt;-</span> <span class="fu">ggplot</span>(avg_crime_by_day, <span class="fu">aes</span>(<span class="at">x =</span> days_from_dst, avg_violent_crime)) <span class="sc">+</span></span>
-<span id="cb3-25"><a href="#cb3-25" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>(<span class="at">alpha =</span> <span class="fl">0.5</span>, <span class="at">colour =</span> <span class="st">"#e69a0e"</span>) <span class="sc">+</span></span>
-<span id="cb3-26"><a href="#cb3-26" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_smooth</span>(<span class="at">data =</span> <span class="fu">filter</span>(avg_crime_by_day, dst_dummy <span class="sc">==</span> <span class="dv">0</span>), </span>
-<span id="cb3-27"><a href="#cb3-27" aria-hidden="true" tabindex="-1"></a>              <span class="fu">aes</span>(<span class="at">x =</span> days_from_dst, <span class="at">y =</span> avg_violent_crime), <span class="at">se =</span> <span class="cn">FALSE</span>, <span class="at">colour =</span> <span class="st">"#a011ed"</span>, <span class="at">linewidth =</span> <span class="fl">0.5</span>) <span class="sc">+</span></span>
-<span id="cb3-28"><a href="#cb3-28" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_smooth</span>(<span class="at">data =</span> <span class="fu">filter</span>(avg_crime_by_day, dst_dummy <span class="sc">==</span> <span class="dv">1</span>), </span>
-<span id="cb3-29"><a href="#cb3-29" aria-hidden="true" tabindex="-1"></a>              <span class="fu">aes</span>(<span class="at">x =</span> days_from_dst, <span class="at">y =</span> avg_violent_crime), <span class="at">se =</span> <span class="cn">FALSE</span>, <span class="at">colour =</span> <span class="st">"red"</span>, <span class="at">linewidth =</span> <span class="fl">0.5</span>) <span class="sc">+</span></span>
-<span id="cb3-30"><a href="#cb3-30" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_vline</span>(<span class="at">xintercept =</span> <span class="dv">0</span>, <span class="at">linetype =</span> <span class="st">"dashed"</span>, <span class="at">colour =</span> <span class="st">"darkslategrey"</span>) <span class="sc">+</span></span>
-<span id="cb3-31"><a href="#cb3-31" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">title =</span> <span class="st">"Avg Violent Crimes Around DST"</span>, <span class="at">x =</span> <span class="st">"Days from DST Start"</span>, <span class="at">y =</span> <span class="st">"Violent Crimes per 100k"</span>)</span>
-<span id="cb3-32"><a href="#cb3-32" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-33"><a href="#cb3-33" aria-hidden="true" tabindex="-1"></a>property_crime_plot <span class="sc">/</span> violent_crime_plot</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb3-15"><a href="#cb3-15" aria-hidden="true" tabindex="-1"></a><span class="co"># Need long format for graphs</span></span>
+<span id="cb3-16"><a href="#cb3-16" aria-hidden="true" tabindex="-1"></a>avg_crime_by_day_long <span class="ot">&lt;-</span> avg_crime_by_day <span class="sc">%&gt;%</span></span>
+<span id="cb3-17"><a href="#cb3-17" aria-hidden="true" tabindex="-1"></a>  <span class="fu">pivot_longer</span>(</span>
+<span id="cb3-18"><a href="#cb3-18" aria-hidden="true" tabindex="-1"></a>    <span class="at">cols =</span> <span class="fu">c</span>(avg_property_crime, avg_violent_crime),</span>
+<span id="cb3-19"><a href="#cb3-19" aria-hidden="true" tabindex="-1"></a>    <span class="at">names_to =</span> <span class="st">"crime_type"</span>,</span>
+<span id="cb3-20"><a href="#cb3-20" aria-hidden="true" tabindex="-1"></a>    <span class="at">values_to =</span> <span class="st">"crime_rate"</span></span>
+<span id="cb3-21"><a href="#cb3-21" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">%&gt;%</span></span>
+<span id="cb3-22"><a href="#cb3-22" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">crime_type =</span> <span class="fu">case_when</span>(</span>
+<span id="cb3-23"><a href="#cb3-23" aria-hidden="true" tabindex="-1"></a>    crime_type <span class="sc">==</span> <span class="st">"avg_property_crime"</span> <span class="sc">~</span> <span class="st">"Property Crime"</span>,</span>
+<span id="cb3-24"><a href="#cb3-24" aria-hidden="true" tabindex="-1"></a>    crime_type <span class="sc">==</span> <span class="st">"avg_violent_crime"</span> <span class="sc">~</span> <span class="st">"Violent Crime"</span></span>
+<span id="cb3-25"><a href="#cb3-25" aria-hidden="true" tabindex="-1"></a>  ))</span>
+<span id="cb3-26"><a href="#cb3-26" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-27"><a href="#cb3-27" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(avg_crime_by_day_long, <span class="fu">aes</span>(<span class="at">x =</span> days_from_dst, <span class="at">y =</span> crime_rate)) <span class="sc">+</span></span>
+<span id="cb3-28"><a href="#cb3-28" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>(<span class="at">alpha =</span> <span class="fl">0.5</span>, <span class="at">colour =</span> <span class="st">"#e69a0e"</span>) <span class="sc">+</span></span>
+<span id="cb3-29"><a href="#cb3-29" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_smooth</span>(<span class="at">data =</span> <span class="fu">filter</span>(avg_crime_by_day_long, dst_dummy <span class="sc">==</span> <span class="dv">0</span>), </span>
+<span id="cb3-30"><a href="#cb3-30" aria-hidden="true" tabindex="-1"></a>              <span class="at">se =</span> <span class="cn">FALSE</span>, <span class="at">colour =</span> <span class="st">"#a011ed"</span>, <span class="at">linewidth =</span> <span class="fl">0.5</span>) <span class="sc">+</span></span>
+<span id="cb3-31"><a href="#cb3-31" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_smooth</span>(<span class="at">data =</span> <span class="fu">filter</span>(avg_crime_by_day_long, dst_dummy <span class="sc">==</span> <span class="dv">1</span>), </span>
+<span id="cb3-32"><a href="#cb3-32" aria-hidden="true" tabindex="-1"></a>              <span class="at">se =</span> <span class="cn">FALSE</span>, <span class="at">colour =</span> <span class="st">"red"</span>, <span class="at">linewidth =</span> <span class="fl">0.5</span>) <span class="sc">+</span></span>
+<span id="cb3-33"><a href="#cb3-33" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_vline</span>(<span class="at">xintercept =</span> <span class="dv">0</span>, <span class="at">linetype =</span> <span class="st">"dashed"</span>, <span class="at">colour =</span> <span class="st">"darkslategrey"</span>) <span class="sc">+</span></span>
+<span id="cb3-34"><a href="#cb3-34" aria-hidden="true" tabindex="-1"></a>  <span class="fu">facet_wrap</span>(<span class="sc">~</span>crime_type, <span class="at">scales =</span> <span class="st">"free_y"</span>, <span class="at">ncol =</span> <span class="dv">1</span>) <span class="sc">+</span></span>
+<span id="cb3-35"><a href="#cb3-35" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">x =</span> <span class="st">"Days from DST Start"</span>, </span>
+<span id="cb3-36"><a href="#cb3-36" aria-hidden="true" tabindex="-1"></a>       <span class="at">y =</span> <span class="st">"Crimes per 100k"</span>,</span>
+<span id="cb3-37"><a href="#cb3-37" aria-hidden="true" tabindex="-1"></a>       <span class="at">title =</span> <span class="st">"Average Rate of Crimes Around DST"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </details>
 <div class="cell-output-display dark-mode">
 <div id="fig-rddD08295A6-16DC-499D-85A8-8BA656E013A2" class="quarto-figure quarto-figure-center anchored">
@@ -475,196 +484,176 @@ crime = \alpha + \beta_1 days + \beta_2 DST + \beta_3 DST*days + \delta W + \gam
 <div class="cell">
 <details>
 <summary>Code</summary>
-<div class="sourceCode cell-code" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>run_model <span class="ot">&lt;-</span> <span class="cf">function</span>(outcome, bandwidth) {</span>
+<div class="sourceCode cell-code" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>run_model_linear <span class="ot">&lt;-</span> <span class="cf">function</span>(outcome, bandwidth) {</span>
 <span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>  formula <span class="ot">&lt;-</span> <span class="fu">as.formula</span>(<span class="fu">paste</span>(outcome, <span class="st">"~ days_from_dst*dst_dummy + day_of_week + rain + avg_temperature"</span>))</span>
 <span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">lm</span>(formula, <span class="at">data =</span> merged_data_clean, <span class="at">subset =</span> <span class="fu">abs</span>(days_from_dst) <span class="sc">&lt;=</span> bandwidth)</span>
 <span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>}</span>
 <span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>model_property <span class="ot">&lt;-</span> <span class="fu">run_model</span>(<span class="st">"num_property_crime_perht"</span>, <span class="dv">60</span>)</span>
-<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a>model_violent <span class="ot">&lt;-</span> <span class="fu">run_model</span>(<span class="st">"num_violent_crime_perht"</span>, <span class="dv">60</span>)</span>
-<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a>coef_property <span class="ot">&lt;-</span> <span class="fu">tidy</span>(model_property) <span class="sc">%&gt;%</span> </span>
-<span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(term <span class="sc">==</span> <span class="st">"dst_dummy"</span>) <span class="sc">%&gt;%</span> </span>
-<span id="cb4-11"><a href="#cb4-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(estimate, std.error, statistic, p.value)</span>
-<span id="cb4-12"><a href="#cb4-12" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb4-13"><a href="#cb4-13" aria-hidden="true" tabindex="-1"></a>coef_violent <span class="ot">&lt;-</span> <span class="fu">tidy</span>(model_violent) <span class="sc">%&gt;%</span> </span>
-<span id="cb4-14"><a href="#cb4-14" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(term <span class="sc">==</span> <span class="st">"dst_dummy"</span>) <span class="sc">%&gt;%</span> </span>
-<span id="cb4-15"><a href="#cb4-15" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(estimate, std.error, statistic, p.value)</span>
-<span id="cb4-16"><a href="#cb4-16" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb4-17"><a href="#cb4-17" aria-hidden="true" tabindex="-1"></a>coef_table <span class="ot">&lt;-</span> <span class="fu">rbind</span>(</span>
-<span id="cb4-18"><a href="#cb4-18" aria-hidden="true" tabindex="-1"></a>  <span class="fu">data.frame</span>(<span class="at">Crime =</span> <span class="st">"Property"</span>, coef_property),</span>
-<span id="cb4-19"><a href="#cb4-19" aria-hidden="true" tabindex="-1"></a>  <span class="fu">data.frame</span>(<span class="at">Crime =</span> <span class="st">"Violent"</span>, coef_violent)</span>
-<span id="cb4-20"><a href="#cb4-20" aria-hidden="true" tabindex="-1"></a>)</span>
-<span id="cb4-21"><a href="#cb4-21" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb4-22"><a href="#cb4-22" aria-hidden="true" tabindex="-1"></a><span class="fu">kbl</span>(coef_table, </span>
-<span id="cb4-23"><a href="#cb4-23" aria-hidden="true" tabindex="-1"></a>    <span class="at">col.names =</span> <span class="fu">c</span>(<span class="st">"Crime Type"</span>, <span class="st">"Estimate"</span>, <span class="st">"Std. Error"</span>, <span class="st">"t-statistic"</span>, <span class="st">"p-value"</span>),</span>
-<span id="cb4-24"><a href="#cb4-24" aria-hidden="true" tabindex="-1"></a>    <span class="at">align =</span> <span class="fu">c</span>(<span class="st">'l'</span>, <span class="st">'c'</span>, <span class="st">'c'</span>, <span class="st">'c'</span>, <span class="st">'c'</span>),</span>
-<span id="cb4-25"><a href="#cb4-25" aria-hidden="true" tabindex="-1"></a>    <span class="at">digits =</span> <span class="dv">3</span>,</span>
-<span id="cb4-26"><a href="#cb4-26" aria-hidden="true" tabindex="-1"></a>    <span class="at">caption =</span> <span class="st">"Effect of DST on Crime per 100k"</span>,</span>
-<span id="cb4-27"><a href="#cb4-27" aria-hidden="true" tabindex="-1"></a>    <span class="at">booktabs =</span> T) <span class="sc">%&gt;%</span></span>
-<span id="cb4-28"><a href="#cb4-28" aria-hidden="true" tabindex="-1"></a>  <span class="fu">add_header_above</span>(<span class="fu">c</span>(<span class="st">" "</span> <span class="ot">=</span> <span class="dv">1</span>, <span class="st">"Statistics"</span> <span class="ot">=</span> <span class="dv">4</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a><span class="co"># 3 week bandwidth for initial results.</span></span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a>model_property <span class="ot">&lt;-</span> <span class="fu">run_model_linear</span>(<span class="st">"num_property_crime_perht"</span>, <span class="dv">21</span>)</span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a>model_violent <span class="ot">&lt;-</span> <span class="fu">run_model_linear</span>(<span class="st">"num_violent_crime_perht"</span>, <span class="dv">21</span>)</span>
+<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a><span class="co"># vcov for robust SE.</span></span>
+<span id="cb4-11"><a href="#cb4-11" aria-hidden="true" tabindex="-1"></a>coef_property <span class="ot">&lt;-</span> <span class="fu">tidy</span>(<span class="fu">coeftest</span>(model_property, <span class="at">vcov =</span> vcovHC), <span class="at">conf.int =</span> <span class="cn">TRUE</span>, <span class="at">conf.level =</span> <span class="fl">0.95</span>)</span>
+<span id="cb4-12"><a href="#cb4-12" aria-hidden="true" tabindex="-1"></a>coef_violent <span class="ot">&lt;-</span> <span class="fu">tidy</span>(<span class="fu">coeftest</span>(model_violent, <span class="at">vcov =</span> vcovHC), <span class="at">conf.int =</span> <span class="cn">TRUE</span>, <span class="at">conf.level =</span> <span class="fl">0.95</span>)</span>
+<span id="cb4-13"><a href="#cb4-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-14"><a href="#cb4-14" aria-hidden="true" tabindex="-1"></a>combined_results <span class="ot">&lt;-</span> <span class="fu">bind_rows</span>(</span>
+<span id="cb4-15"><a href="#cb4-15" aria-hidden="true" tabindex="-1"></a>  coef_property <span class="sc">%&gt;%</span> </span>
+<span id="cb4-16"><a href="#cb4-16" aria-hidden="true" tabindex="-1"></a>    <span class="fu">filter</span>(term <span class="sc">==</span> <span class="st">"dst_dummy"</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb4-17"><a href="#cb4-17" aria-hidden="true" tabindex="-1"></a>    <span class="fu">mutate</span>(<span class="at">crime_type =</span> <span class="st">"Property Crime"</span>),</span>
+<span id="cb4-18"><a href="#cb4-18" aria-hidden="true" tabindex="-1"></a>  coef_violent <span class="sc">%&gt;%</span></span>
+<span id="cb4-19"><a href="#cb4-19" aria-hidden="true" tabindex="-1"></a>    <span class="fu">filter</span>(term <span class="sc">==</span> <span class="st">"dst_dummy"</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb4-20"><a href="#cb4-20" aria-hidden="true" tabindex="-1"></a>    <span class="fu">mutate</span>(<span class="at">crime_type =</span> <span class="st">"Violent Crime"</span>)</span>
+<span id="cb4-21"><a href="#cb4-21" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb4-22"><a href="#cb4-22" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-23"><a href="#cb4-23" aria-hidden="true" tabindex="-1"></a><span class="fu">modelsummary</span>(</span>
+<span id="cb4-24"><a href="#cb4-24" aria-hidden="true" tabindex="-1"></a>  <span class="fu">list</span>(<span class="st">"Property Crime"</span> <span class="ot">=</span> model_property, <span class="st">"Violent Crime"</span> <span class="ot">=</span> model_violent),</span>
+<span id="cb4-25"><a href="#cb4-25" aria-hidden="true" tabindex="-1"></a>  <span class="at">coef_map =</span> <span class="fu">c</span>(<span class="st">"dst_dummy"</span> <span class="ot">=</span> <span class="st">"DST Effect"</span>),</span>
+<span id="cb4-26"><a href="#cb4-26" aria-hidden="true" tabindex="-1"></a>  <span class="at">vcov =</span> <span class="st">"robust"</span>,</span>
+<span id="cb4-27"><a href="#cb4-27" aria-hidden="true" tabindex="-1"></a>  <span class="at">gof_map =</span> <span class="fu">c</span>(<span class="st">"nobs"</span>, <span class="st">"vcov.type"</span>),</span>
+<span id="cb4-28"><a href="#cb4-28" aria-hidden="true" tabindex="-1"></a>  <span class="at">statistic =</span> <span class="fu">c</span>(<span class="st">"conf.int"</span>, <span class="st">"s.e. = {std.error}"</span>),</span>
+<span id="cb4-29"><a href="#cb4-29" aria-hidden="true" tabindex="-1"></a>  <span class="at">stars =</span> <span class="cn">TRUE</span>,</span>
+<span id="cb4-30"><a href="#cb4-30" aria-hidden="true" tabindex="-1"></a>  <span class="at">title =</span> <span class="st">"Effect of DST on Crime per 100k"</span></span>
+<span id="cb4-31"><a href="#cb4-31" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </details>
 <div class="cell-output-display">
-<table data-quarto-postprocess="true" class="table table-sm table-striped small">
+<table class="table table-sm table-striped small" data-quarto-postprocess="true">
 <caption>Effect of DST on Crime per 100k</caption>
-<colgroup>
-<col style="width: 20%">
-<col style="width: 20%">
-<col style="width: 20%">
-<col style="width: 20%">
-<col style="width: 20%">
-</colgroup>
 <thead>
 <tr class="header">
-<th data-quarto-table-cell-role="th" style="text-align: left; empty-cells: hide; border-bottom: hidden;"></th>
-<th colspan="4" data-quarto-table-cell-role="th" style="text-align: center; border-bottom: hidden; padding-bottom: 0; padding-left: 3px; padding-right: 3px;"><div style="border-bottom: 1px solid #ddd; padding-bottom: 5px; ">
-Statistics
-</div></th>
-</tr>
-<tr class="odd">
-<th style="text-align: left;" data-quarto-table-cell-role="th">Crime Type</th>
-<th style="text-align: center;" data-quarto-table-cell-role="th">Estimate</th>
-<th style="text-align: center;" data-quarto-table-cell-role="th">Std. Error</th>
-<th style="text-align: center;" data-quarto-table-cell-role="th">t-statistic</th>
-<th style="text-align: center;" data-quarto-table-cell-role="th">p-value</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th"></th>
+<th style="text-align: center;" data-quarto-table-cell-role="th">Property Crime</th>
+<th style="text-align: center;" data-quarto-table-cell-role="th">&nbsp;Violent Crime</th>
 </tr>
 </thead>
 <tbody>
 <tr class="odd">
-<td style="text-align: left;">Property</td>
-<td style="text-align: center;">0.057</td>
-<td style="text-align: center;">0.340</td>
-<td style="text-align: center;">0.168</td>
-<td style="text-align: center;">0.867</td>
+<td style="text-align: left;">DST Effect</td>
+<td style="text-align: center;">0.069</td>
+<td style="text-align: center;">−0.012</td>
 </tr>
 <tr class="even">
-<td style="text-align: left;">Violent</td>
-<td style="text-align: center;">0.000</td>
-<td style="text-align: center;">0.048</td>
-<td style="text-align: center;">0.007</td>
-<td style="text-align: center;">0.995</td>
+<td style="text-align: left;"></td>
+<td style="text-align: center;">[−1.096, 1.234]</td>
+<td style="text-align: center;">[−0.169, 0.146]</td>
 </tr>
-</tbody>
+<tr class="odd">
+<td style="text-align: left; box-shadow: 0px 1.5px;"></td>
+<td style="text-align: center; box-shadow: 0px 1.5px;">s.e. = 0.594</td>
+<td style="text-align: center; box-shadow: 0px 1.5px;">s.e. = 0.080</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Num.Obs.</td>
+<td style="text-align: center;">901</td>
+<td style="text-align: center;">901</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Std.Errors</td>
+<td style="text-align: center;">HC3</td>
+<td style="text-align: center;">HC3</td>
+</tr>
+</tbody><tfoot>
+<tr class="even">
+<td style="text-align: left; padding: 0;"><sup></sup> + p &lt; 0.1, * p &lt; 0.05, ** p &lt; 0.01, *** p &lt; 0.001</td>
+<td style="text-align: center;"></td>
+<td style="text-align: center;"></td>
+</tr>
+</tfoot>
+
 </table>
 
 
 
 </div>
 </div>
-<p>Our estimates confirm the intuition from the graphs. Both estimates are close to 0,<a href="#fn3" class="footnote-ref" id="fnref3" role="doc-noteref"><sup>3</sup></a> and the p-values suggest that it’s highly likely to see estimates of this magnitude under the null hypothesis that there is no effect. In other words, we would expect to see these results if DST has no effect on crime in Vancouver.</p>
+<p>Our estimates confirm the intuition from the graphs. Both estimates are close to 0,<a href="#fn3" class="footnote-ref" id="fnref3" role="doc-noteref"><sup>3</sup></a> and the confidence intervals suggest that DST has little to no meaningful effect on crime rates in Vancouver.</p>
 </section>
 <section id="robustness-checks" class="level1">
 <h1>Robustness Checks</h1>
-<p>It’s possible that the functional form of <a href="#eq-rdd">Equation&nbsp;1</a> does not adequately capture the true effect of DST on crime. It’s also possible that the 60 day range I chose is too wide, thus biasing the results. To check whether either of these are actual problems, I’ll run some additional analyses with a cubic functional form: <span class="math display">
+<p>It’s possible that the functional form of <a href="#eq-rdd">Equation&nbsp;1</a> does not adequately capture the true effect of DST on crime. It’s also possible that the 21 day bandwidth I chose does not give good results for whatever reason. To check whether either of these are actual problems, I’ll run some additional analyses with a quadratic functional form: <span class="math display">
 \begin{aligned}
-crime &amp;= \alpha + \beta_1 days + \beta_2 days^2 + \beta_3 days^3 + \beta_4 DST
-\\ &amp;+ (\beta_5 days + \beta_6 days^2 + \beta_7 days^3)*DST + \delta W + \gamma_{dow}
+crime &amp;= \alpha + \beta_1 days + \beta_2 days^2 + \beta_4 DST
+\\ &amp;+ (\beta_5 days + \beta_6 days^2)*DST + \delta W + \gamma_{dow}
 \end{aligned}
-</span> along with a 14 day range of days around the start of DST with the default <a href="#eq-rdd">Equation&nbsp;1</a>.</p>
-<div class="cell">
+</span> along with bandwidths ranging from 2 weeks to 8 weeks.</p>
+<div class="cell dark-light">
 <details>
 <summary>Code</summary>
-<div class="sourceCode cell-code" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>model_property_cubic <span class="ot">&lt;-</span> <span class="fu">lm</span>(num_property_crime_perht <span class="sc">~</span> <span class="fu">poly</span>(days_from_dst, <span class="dv">3</span>, <span class="at">raw=</span><span class="cn">TRUE</span>)<span class="sc">*</span>dst_dummy <span class="sc">+</span></span>
-<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>                             day_of_week <span class="sc">+</span> rain <span class="sc">+</span> avg_temperature, <span class="at">data =</span> merged_data_clean)</span>
-<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>model_violent_cubic <span class="ot">&lt;-</span> <span class="fu">lm</span>(num_violent_crime_perht <span class="sc">~</span> <span class="fu">poly</span>(days_from_dst, <span class="dv">3</span>, <span class="at">raw=</span><span class="cn">TRUE</span>)<span class="sc">*</span>dst_dummy </span>
-<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>                           <span class="sc">+</span> day_of_week <span class="sc">+</span> rain <span class="sc">+</span> avg_temperature, <span class="at">data =</span> merged_data_clean)</span>
-<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>model_property_altband <span class="ot">&lt;-</span> <span class="fu">run_model</span>(<span class="st">"num_property_crime_perht"</span>, <span class="dv">14</span>)</span>
-<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a>model_violent_altband <span class="ot">&lt;-</span> <span class="fu">run_model</span>(<span class="st">"num_violent_crime_perht"</span>, <span class="dv">14</span>)</span>
-<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a>extract_dst_coef <span class="ot">&lt;-</span> <span class="cf">function</span>(model, model_name) {</span>
-<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">tidy</span>(model) <span class="sc">%&gt;%</span> </span>
-<span id="cb5-10"><a href="#cb5-10" aria-hidden="true" tabindex="-1"></a>    <span class="fu">filter</span>(term <span class="sc">==</span> <span class="st">"dst_dummy"</span>) <span class="sc">%&gt;%</span> </span>
-<span id="cb5-11"><a href="#cb5-11" aria-hidden="true" tabindex="-1"></a>    <span class="fu">select</span>(estimate, std.error, statistic, p.value) <span class="sc">%&gt;%</span></span>
-<span id="cb5-12"><a href="#cb5-12" aria-hidden="true" tabindex="-1"></a>    <span class="fu">mutate</span>(<span class="at">Model =</span> model_name)</span>
-<span id="cb5-13"><a href="#cb5-13" aria-hidden="true" tabindex="-1"></a>}</span>
-<span id="cb5-14"><a href="#cb5-14" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb5-15"><a href="#cb5-15" aria-hidden="true" tabindex="-1"></a>coef_table <span class="ot">&lt;-</span> <span class="fu">bind_rows</span>(</span>
-<span id="cb5-16"><a href="#cb5-16" aria-hidden="true" tabindex="-1"></a>  <span class="fu">extract_dst_coef</span>(model_violent_cubic, <span class="st">"Violent - Cubic"</span>),</span>
-<span id="cb5-17"><a href="#cb5-17" aria-hidden="true" tabindex="-1"></a>  <span class="fu">extract_dst_coef</span>(model_property_cubic, <span class="st">"Property - Cubic"</span>),</span>
-<span id="cb5-18"><a href="#cb5-18" aria-hidden="true" tabindex="-1"></a>  <span class="fu">extract_dst_coef</span>(model_violent_altband, <span class="st">"Violent - 14 Day Bandwidth"</span>),</span>
-<span id="cb5-19"><a href="#cb5-19" aria-hidden="true" tabindex="-1"></a>  <span class="fu">extract_dst_coef</span>(model_property_altband, <span class="st">"Property - 14 Day Bandwidth"</span>)</span>
-<span id="cb5-20"><a href="#cb5-20" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">%&gt;%</span></span>
-<span id="cb5-21"><a href="#cb5-21" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">Crime_Type =</span> <span class="fu">ifelse</span>(<span class="fu">grepl</span>(<span class="st">"Violent"</span>, Model), <span class="st">"Violent"</span>, <span class="st">"Property"</span>),</span>
-<span id="cb5-22"><a href="#cb5-22" aria-hidden="true" tabindex="-1"></a>         <span class="at">Model_Type =</span> <span class="fu">gsub</span>(<span class="st">"Violent - |Property - "</span>, <span class="st">""</span>, Model)) <span class="sc">%&gt;%</span></span>
-<span id="cb5-23"><a href="#cb5-23" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(Model_Type, Crime_Type,<span class="fu">everything</span>(), <span class="sc">-</span>Model)</span>
-<span id="cb5-24"><a href="#cb5-24" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb5-25"><a href="#cb5-25" aria-hidden="true" tabindex="-1"></a><span class="fu">kbl</span>(coef_table[<span class="dv">2</span><span class="sc">:</span><span class="dv">6</span>], </span>
-<span id="cb5-26"><a href="#cb5-26" aria-hidden="true" tabindex="-1"></a>      <span class="at">col.names =</span> <span class="fu">c</span>(<span class="st">"Crime Type"</span>, <span class="st">"Estimate"</span>, <span class="st">"Std. Error"</span>, <span class="st">"t-statistic"</span>, <span class="st">"p-value"</span>),</span>
-<span id="cb5-27"><a href="#cb5-27" aria-hidden="true" tabindex="-1"></a>      <span class="at">digits =</span> <span class="dv">3</span>,</span>
-<span id="cb5-28"><a href="#cb5-28" aria-hidden="true" tabindex="-1"></a>      <span class="at">align =</span> <span class="fu">c</span>(<span class="st">'l'</span>, <span class="st">'c'</span>, <span class="st">'c'</span>, <span class="st">'c'</span>, <span class="st">'c'</span>),</span>
-<span id="cb5-29"><a href="#cb5-29" aria-hidden="true" tabindex="-1"></a>      <span class="at">caption =</span> <span class="st">"Effect of DST Across Different Models"</span>) <span class="sc">%&gt;%</span></span>
-<span id="cb5-30"><a href="#cb5-30" aria-hidden="true" tabindex="-1"></a>  <span class="fu">pack_rows</span>(<span class="st">"Cubic Model"</span>, <span class="dv">1</span>, <span class="dv">2</span>) <span class="sc">%&gt;%</span></span>
-<span id="cb5-31"><a href="#cb5-31" aria-hidden="true" tabindex="-1"></a>  <span class="fu">pack_rows</span>(<span class="st">"14 Day Bandwidth"</span>, <span class="dv">3</span>, <span class="dv">4</span>) <span class="sc">%&gt;%</span></span>
-<span id="cb5-32"><a href="#cb5-32" aria-hidden="true" tabindex="-1"></a>  <span class="fu">add_header_above</span>(<span class="fu">c</span>(<span class="st">" "</span> <span class="ot">=</span> <span class="dv">1</span>, <span class="st">"Statistics"</span> <span class="ot">=</span> <span class="dv">4</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>run_model_quad <span class="ot">&lt;-</span> <span class="cf">function</span>(outcome, bandwidth) {</span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>  formula <span class="ot">&lt;-</span> <span class="fu">as.formula</span>(<span class="fu">paste</span>(outcome, <span class="st">"~ poly(days_from_dst, 2, raw=TRUE)*dst_dummy +</span></span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a><span class="st">                             day_of_week + rain + avg_temperature"</span>))</span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">lm</span>(formula, <span class="at">data =</span> merged_data_clean, <span class="at">subset =</span> <span class="fu">abs</span>(days_from_dst) <span class="sc">&lt;=</span> bandwidth)</span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a><span class="co"># Bandwidths are the range of days around start of DST.</span></span>
+<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a>bandwidths <span class="ot">&lt;-</span> <span class="fu">seq</span>(<span class="dv">14</span>, <span class="dv">56</span>, <span class="at">by =</span> <span class="dv">7</span>)</span>
+<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-10"><a href="#cb5-10" aria-hidden="true" tabindex="-1"></a>get_models_results <span class="ot">&lt;-</span> <span class="cf">function</span>(bandwidth) {</span>
+<span id="cb5-11"><a href="#cb5-11" aria-hidden="true" tabindex="-1"></a>  linear_prop <span class="ot">&lt;-</span> <span class="fu">run_model_linear</span>(<span class="st">"num_property_crime_perht"</span>, bandwidth)</span>
+<span id="cb5-12"><a href="#cb5-12" aria-hidden="true" tabindex="-1"></a>  linear_violent <span class="ot">&lt;-</span> <span class="fu">run_model_linear</span>(<span class="st">"num_violent_crime_perht"</span>, bandwidth)</span>
+<span id="cb5-13"><a href="#cb5-13" aria-hidden="true" tabindex="-1"></a>  quad_prop <span class="ot">&lt;-</span> <span class="fu">run_model_quad</span>(<span class="st">"num_property_crime_perht"</span>, bandwidth)</span>
+<span id="cb5-14"><a href="#cb5-14" aria-hidden="true" tabindex="-1"></a>  quad_violent <span class="ot">&lt;-</span> <span class="fu">run_model_quad</span>(<span class="st">"num_violent_crime_perht"</span>, bandwidth)</span>
+<span id="cb5-15"><a href="#cb5-15" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb5-16"><a href="#cb5-16" aria-hidden="true" tabindex="-1"></a>  results <span class="ot">&lt;-</span> <span class="fu">bind_rows</span>(</span>
+<span id="cb5-17"><a href="#cb5-17" aria-hidden="true" tabindex="-1"></a>    <span class="fu">tidy</span>(<span class="fu">coeftest</span>(linear_prop, <span class="at">vcov =</span> vcovHC), <span class="at">conf.int =</span> <span class="cn">TRUE</span>) <span class="sc">%&gt;%</span> </span>
+<span id="cb5-18"><a href="#cb5-18" aria-hidden="true" tabindex="-1"></a>      <span class="fu">filter</span>(term <span class="sc">==</span> <span class="st">"dst_dummy"</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb5-19"><a href="#cb5-19" aria-hidden="true" tabindex="-1"></a>      <span class="fu">mutate</span>(<span class="at">crime_type =</span> <span class="st">"Property Crime"</span>,</span>
+<span id="cb5-20"><a href="#cb5-20" aria-hidden="true" tabindex="-1"></a>             <span class="at">model_type =</span> <span class="st">"Linear"</span>,</span>
+<span id="cb5-21"><a href="#cb5-21" aria-hidden="true" tabindex="-1"></a>             <span class="at">bandwidth =</span> bandwidth),</span>
+<span id="cb5-22"><a href="#cb5-22" aria-hidden="true" tabindex="-1"></a>    <span class="fu">tidy</span>(<span class="fu">coeftest</span>(linear_violent, <span class="at">vcov =</span> vcovHC), <span class="at">conf.int =</span> <span class="cn">TRUE</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb5-23"><a href="#cb5-23" aria-hidden="true" tabindex="-1"></a>      <span class="fu">filter</span>(term <span class="sc">==</span> <span class="st">"dst_dummy"</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb5-24"><a href="#cb5-24" aria-hidden="true" tabindex="-1"></a>      <span class="fu">mutate</span>(<span class="at">crime_type =</span> <span class="st">"Violent Crime"</span>,</span>
+<span id="cb5-25"><a href="#cb5-25" aria-hidden="true" tabindex="-1"></a>             <span class="at">model_type =</span> <span class="st">"Linear"</span>,</span>
+<span id="cb5-26"><a href="#cb5-26" aria-hidden="true" tabindex="-1"></a>             <span class="at">bandwidth =</span> bandwidth),</span>
+<span id="cb5-27"><a href="#cb5-27" aria-hidden="true" tabindex="-1"></a>    <span class="fu">tidy</span>(<span class="fu">coeftest</span>(quad_prop, <span class="at">vcov =</span> vcovHC), <span class="at">conf.int =</span> <span class="cn">TRUE</span>) <span class="sc">%&gt;%</span> </span>
+<span id="cb5-28"><a href="#cb5-28" aria-hidden="true" tabindex="-1"></a>      <span class="fu">filter</span>(term <span class="sc">==</span> <span class="st">"dst_dummy"</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb5-29"><a href="#cb5-29" aria-hidden="true" tabindex="-1"></a>      <span class="fu">mutate</span>(<span class="at">crime_type =</span> <span class="st">"Property Crime"</span>,</span>
+<span id="cb5-30"><a href="#cb5-30" aria-hidden="true" tabindex="-1"></a>             <span class="at">model_type =</span> <span class="st">"Quadratic"</span>,</span>
+<span id="cb5-31"><a href="#cb5-31" aria-hidden="true" tabindex="-1"></a>             <span class="at">bandwidth =</span> bandwidth),</span>
+<span id="cb5-32"><a href="#cb5-32" aria-hidden="true" tabindex="-1"></a>    <span class="fu">tidy</span>(<span class="fu">coeftest</span>(quad_violent, <span class="at">vcov =</span> vcovHC), <span class="at">conf.int =</span> <span class="cn">TRUE</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb5-33"><a href="#cb5-33" aria-hidden="true" tabindex="-1"></a>      <span class="fu">filter</span>(term <span class="sc">==</span> <span class="st">"dst_dummy"</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb5-34"><a href="#cb5-34" aria-hidden="true" tabindex="-1"></a>      <span class="fu">mutate</span>(<span class="at">crime_type =</span> <span class="st">"Violent Crime"</span>,</span>
+<span id="cb5-35"><a href="#cb5-35" aria-hidden="true" tabindex="-1"></a>             <span class="at">model_type =</span> <span class="st">"Quadratic"</span>,</span>
+<span id="cb5-36"><a href="#cb5-36" aria-hidden="true" tabindex="-1"></a>             <span class="at">bandwidth =</span> bandwidth)</span>
+<span id="cb5-37"><a href="#cb5-37" aria-hidden="true" tabindex="-1"></a>  )</span>
+<span id="cb5-38"><a href="#cb5-38" aria-hidden="true" tabindex="-1"></a>  <span class="fu">return</span>(results)</span>
+<span id="cb5-39"><a href="#cb5-39" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb5-40"><a href="#cb5-40" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-41"><a href="#cb5-41" aria-hidden="true" tabindex="-1"></a>all_results <span class="ot">&lt;-</span> <span class="fu">map_dfr</span>(bandwidths, get_models_results)</span>
+<span id="cb5-42"><a href="#cb5-42" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-43"><a href="#cb5-43" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(all_results, </span>
+<span id="cb5-44"><a href="#cb5-44" aria-hidden="true" tabindex="-1"></a>       <span class="fu">aes</span>(<span class="at">x =</span> bandwidth, <span class="at">y =</span> estimate, </span>
+<span id="cb5-45"><a href="#cb5-45" aria-hidden="true" tabindex="-1"></a>           <span class="at">ymin =</span> conf.low, <span class="at">ymax =</span> conf.high,</span>
+<span id="cb5-46"><a href="#cb5-46" aria-hidden="true" tabindex="-1"></a>           <span class="at">color =</span> model_type)) <span class="sc">+</span></span>
+<span id="cb5-47"><a href="#cb5-47" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>(<span class="at">position =</span> <span class="fu">position_dodge</span>(<span class="at">width =</span> <span class="dv">3</span>)) <span class="sc">+</span></span>
+<span id="cb5-48"><a href="#cb5-48" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_errorbar</span>(<span class="at">position =</span> <span class="fu">position_dodge</span>(<span class="at">width =</span> <span class="dv">3</span>), <span class="at">width =</span> <span class="dv">2</span>) <span class="sc">+</span></span>
+<span id="cb5-49"><a href="#cb5-49" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_hline</span>(<span class="at">yintercept =</span> <span class="dv">0</span>, <span class="at">linetype =</span> <span class="st">"dashed"</span>, <span class="at">color =</span> <span class="st">"darkslategrey"</span>) <span class="sc">+</span></span>
+<span id="cb5-50"><a href="#cb5-50" aria-hidden="true" tabindex="-1"></a>  <span class="fu">facet_wrap</span>(<span class="sc">~</span>crime_type, <span class="at">scales =</span> <span class="st">"free_y"</span>) <span class="sc">+</span></span>
+<span id="cb5-51"><a href="#cb5-51" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">x =</span> <span class="st">"Bandwidth (Days)"</span>,</span>
+<span id="cb5-52"><a href="#cb5-52" aria-hidden="true" tabindex="-1"></a>       <span class="at">y =</span> <span class="st">"Estimated DST Effect"</span>,</span>
+<span id="cb5-53"><a href="#cb5-53" aria-hidden="true" tabindex="-1"></a>       <span class="at">color =</span> <span class="st">"Model Type"</span>,</span>
+<span id="cb5-54"><a href="#cb5-54" aria-hidden="true" tabindex="-1"></a>       <span class="at">title =</span> <span class="st">"DST Effects Across Different Bandwidths"</span>,</span>
+<span id="cb5-55"><a href="#cb5-55" aria-hidden="true" tabindex="-1"></a>       <span class="at">subtitle =</span> <span class="st">"Point Estimates and 95% Confidence Intervals"</span>) <span class="sc">+</span></span>
+<span id="cb5-56"><a href="#cb5-56" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_x_continuous</span>(<span class="at">breaks =</span> bandwidths)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </details>
-<div class="cell-output-display">
-<table data-quarto-postprocess="true" class="table table-sm table-striped small">
-<caption>Effect of DST Across Different Models</caption>
-<colgroup>
-<col style="width: 20%">
-<col style="width: 20%">
-<col style="width: 20%">
-<col style="width: 20%">
-<col style="width: 20%">
-</colgroup>
-<thead>
-<tr class="header">
-<th data-quarto-table-cell-role="th" style="empty-cells: hide; border-bottom: hidden"></th>
-<th colspan="4" data-quarto-table-cell-role="th" style="text-align: center; border-bottom: hidden; padding-bottom: 0; padding-left: 3px; padding-right: 3px;"><div style="border-bottom: 1px solid #ddd; padding-bottom: 5px; ">
-Statistics
-</div></th>
-</tr>
-<tr class="odd">
-<th style="text-align: left;" data-quarto-table-cell-role="th">Crime Type</th>
-<th style="text-align: center;" data-quarto-table-cell-role="th">Estimate</th>
-<th style="text-align: center;" data-quarto-table-cell-role="th">Std. Error</th>
-<th style="text-align: center;" data-quarto-table-cell-role="th">t-statistic</th>
-<th style="text-align: center;" data-quarto-table-cell-role="th">p-value</th>
-</tr>
-</thead>
-<tbody>
-<tr class="odd" data-grouplength="2">
-<td colspan="5" style="border-bottom: 1px solid"><strong>Cubic Model</strong></td>
-</tr>
-<tr class="even">
-<td style="text-align: left; padding-left: 2em;" data-indentlevel="1">Violent</td>
-<td style="text-align: center;">-0.008</td>
-<td style="text-align: center;">0.097</td>
-<td style="text-align: center;">-0.078</td>
-<td style="text-align: center;">0.938</td>
-</tr>
-<tr class="odd">
-<td style="text-align: left; padding-left: 2em;" data-indentlevel="1">Property</td>
-<td style="text-align: center;">0.095</td>
-<td style="text-align: center;">0.688</td>
-<td style="text-align: center;">0.138</td>
-<td style="text-align: center;">0.890</td>
-</tr>
-<tr class="even" data-grouplength="2">
-<td colspan="5" style="border-bottom: 1px solid"><strong>14 Day Bandwidth</strong></td>
-</tr>
-<tr class="odd">
-<td style="text-align: left; padding-left: 2em;" data-indentlevel="1">Violent</td>
-<td style="text-align: center;">-0.055</td>
-<td style="text-align: center;">0.099</td>
-<td style="text-align: center;">-0.558</td>
-<td style="text-align: center;">0.577</td>
-</tr>
-<tr class="even">
-<td style="text-align: left; padding-left: 2em;" data-indentlevel="1">Property</td>
-<td style="text-align: center;">0.103</td>
-<td style="text-align: center;">0.759</td>
-<td style="text-align: center;">0.136</td>
-<td style="text-align: center;">0.892</td>
-</tr>
-</tbody>
-</table>
-
-
-
+<div class="cell-output-display dark-mode">
+<div id="fig-robustD08295A6-16DC-499D-85A8-8BA656E013A2" class="quarto-figure quarto-figure-center anchored">
+<figure class="figure">
+<p><img src="index_files/figure-html/fig-robust-1.png" class="img-fluid figure-img" width="672"></p>
+<figcaption class="figure-caption">Figure&nbsp;3: Graphs of the estimates of DST on crime rates for different bandwidths and functional forms.</figcaption>
+</figure>
 </div>
 </div>
-<p>As we can see, none of the other models have significant results, and the estimates for all the models are fairly close. It seems like DST indeed has little to no effect on crime in Vancouver.</p>
+<div class="cell-output-display light-mode">
+<div id="fig-robustD08295A6-16DC-499D-85A8-8BA656E013A2" class="quarto-figure quarto-figure-center anchored">
+<figure class="figure">
+<p><img src="index_files/figure-html/fig-robust-2.png" class="img-fluid figure-img" width="672"></p>
+<figcaption class="figure-caption">Figure&nbsp;4: Graphs of the estimates of DST on crime rates for different bandwidths and functional forms.</figcaption>
+</figure>
+</div>
+</div>
+</div>
+<p>As we can see, the estimates are all fairly close in general. The confidence intervals become wider with smaller bandwidths, and the quadratic model shows more uncertainty - both of which we would expect. It seems like DST indeed has little to no effect on crime in Vancouver.</p>
 </section>
 <section id="conclusion" class="level1">
 <h1>Conclusion</h1>
@@ -679,11 +668,18 @@ Statistics
 <li><p><strong>Policy Implications</strong>: For policymakers in Vancouver considering the potential benefits or drawbacks of DST, these results suggest that crime reduction should not be considered a relevant factor in these deliberations. The lack of a detectable effect on crime rates indicates that other considerations, such as energy usage or public health, may be more relevant to DST policy decisions.</p></li>
 </ol>
 <p>And of course, I’m personally happy that there is one less reason to have DST if we’re considering its effects in Vancouver.<a href="#fn4" class="footnote-ref" id="fnref4" role="doc-noteref"><sup>4</sup></a></p>
+<section id="changelog" class="level2">
+<h2 class="anchored" data-anchor-id="changelog">Changelog</h2>
+<ul>
+<li><p>2024-10-27: Initial post&nbsp;</p></li>
+<li><p>2024-11-06: Made changelog, changed robustness check methodology, and changed some of the code for graphs and tables.</p></li>
+</ul>
 
 
 <!-- -->
 
 
+</section>
 </section>
 
 
@@ -1125,210 +1121,253 @@ window.document.addEventListener("DOMContentLoaded", function (event) {
 <span id="cb6-24"><a href="#cb6-24" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb6-25"><a href="#cb6-25" aria-hidden="true" tabindex="-1"></a>It turns out that some researchers have had the same question. @doleac2015 found that DST caused a notable decrease in crime rates in the United States. Unfortunately, the results likely cannot be generalized to outside the United States since the mechanism through which DST affects crime rates is by increasing the average amount of ambient light during a typical day. This might lead to a higher chance of criminals being caught, thus potentially lowering crime rates. However, it’s also possible that this higher level of ambient light causes people to spend more time outdoors, resulting in more potential victims for criminals. There's many other reasons why we might not see a decrease in crime rates from DST in other countries as well: different baseline levels of ambient light, different infrastructure, different crime patterns, and so on.</span>
 <span id="cb6-26"><a href="#cb6-26" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-27"><a href="#cb6-27" aria-hidden="true" tabindex="-1"></a>Since I happen to live in Vancouver, I'll use the methodology of @doleac2015 to analyze whether DST has a similar effect on crime rates in Vancouver.</span>
+<span id="cb6-27"><a href="#cb6-27" aria-hidden="true" tabindex="-1"></a>Since I happen to live in Vancouver, I'll use a similar methodology to that of @doleac2015 to analyze whether DST has a comparable effect on crime rates in Vancouver.</span>
 <span id="cb6-28"><a href="#cb6-28" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb6-29"><a href="#cb6-29" aria-hidden="true" tabindex="-1"></a><span class="in">```{r setup}</span></span>
 <span id="cb6-30"><a href="#cb6-30" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(tidyverse)</span>
 <span id="cb6-31"><a href="#cb6-31" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(lubridate)</span>
-<span id="cb6-32"><a href="#cb6-32" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(patchwork)</span>
-<span id="cb6-33"><a href="#cb6-33" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(kableExtra)</span>
-<span id="cb6-34"><a href="#cb6-34" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(broom)</span>
-<span id="cb6-35"><a href="#cb6-35" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(quartoExtra)</span>
-<span id="cb6-36"><a href="#cb6-36" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
-<span id="cb6-37"><a href="#cb6-37" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-38"><a href="#cb6-38" aria-hidden="true" tabindex="-1"></a><span class="fu"># TL;DR</span></span>
+<span id="cb6-32"><a href="#cb6-32" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(kableExtra)</span>
+<span id="cb6-33"><a href="#cb6-33" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(broom)</span>
+<span id="cb6-34"><a href="#cb6-34" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(modelsummary)</span>
+<span id="cb6-35"><a href="#cb6-35" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(sandwich)</span>
+<span id="cb6-36"><a href="#cb6-36" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(lmtest)</span>
+<span id="cb6-37"><a href="#cb6-37" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(quartoExtra)</span>
+<span id="cb6-38"><a href="#cb6-38" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
 <span id="cb6-39"><a href="#cb6-39" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-40"><a href="#cb6-40" aria-hidden="true" tabindex="-1"></a>Using a regression discontinuity design, I find that DST likely has no effect on crime in Vancouver. These results are robust to changing the range of days around DST that are considered and to a different functional form.</span>
+<span id="cb6-40"><a href="#cb6-40" aria-hidden="true" tabindex="-1"></a><span class="fu"># TL;DR</span></span>
 <span id="cb6-41"><a href="#cb6-41" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-42"><a href="#cb6-42" aria-hidden="true" tabindex="-1"></a><span class="fu"># The Methodology</span></span>
+<span id="cb6-42"><a href="#cb6-42" aria-hidden="true" tabindex="-1"></a>Using a regression discontinuity design, I find that DST likely has no effect on crime in Vancouver. These results are robust to changing the range of days around DST that are considered and to a different functional form.</span>
 <span id="cb6-43"><a href="#cb6-43" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-44"><a href="#cb6-44" aria-hidden="true" tabindex="-1"></a>@doleac2015 use what's known as a *sharp regression discontinuity design (RDD)*. The basic idea is to compare a small range of days before and after the start of DST to see if there's any noticeable change in crime rates.<span class="ot">[^1]</span> For this method to be valid, we would need crime rates within this range of DST to be "as good as random." In other words, we're assuming that there's nothing that would cause a systematic change in the behavior of criminals when DST starts.</span>
+<span id="cb6-44"><a href="#cb6-44" aria-hidden="true" tabindex="-1"></a><span class="fu"># The Methodology</span></span>
 <span id="cb6-45"><a href="#cb6-45" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-46"><a href="#cb6-46" aria-hidden="true" tabindex="-1"></a><span class="ot">[^1]: </span>This is a "sharp" RDD because there is a clear cutoff where *all* days after are affected by DST.</span>
+<span id="cb6-46"><a href="#cb6-46" aria-hidden="true" tabindex="-1"></a>@doleac2015 use what's known as a *sharp regression discontinuity design (RDD)*. The basic idea is to compare a small range of days before and after the start of DST (the usual terminology for this range is "*bandwidth"*) to see if there's any noticeable change in crime rates.<span class="ot">[^1]</span> For this method to be valid, we would need crime rates within this range of DST to be "as good as random." In other words, we're assuming that there's nothing that would cause a systematic change in the behavior of criminals when DST starts.</span>
 <span id="cb6-47"><a href="#cb6-47" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-48"><a href="#cb6-48" aria-hidden="true" tabindex="-1"></a>You might question whether this is a reasonable assumption to make – would it really be the case that crime rates are effectively randomly distributed around the start of DST? You would be right to do so. @doleac2015 point out that DST always starts on a Sunday, so we would need to account for this using day-of-week fixed effects. Weather patterns also influence crime rates, so it would be a good idea, though not strictly necessary, to also account for them.<span class="ot">[^2]</span></span>
+<span id="cb6-48"><a href="#cb6-48" aria-hidden="true" tabindex="-1"></a><span class="ot">[^1]: </span>This is a "sharp" RDD because there is a clear cutoff where *all* days after are affected by DST.</span>
 <span id="cb6-49"><a href="#cb6-49" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-50"><a href="#cb6-50" aria-hidden="true" tabindex="-1"></a><span class="ot">[^2]: </span>The RDD would ensure that estimates of the effect of DST are unbiased even when not accounting for weather, but including weather variables can improve the precision of our estimate.</span>
+<span id="cb6-50"><a href="#cb6-50" aria-hidden="true" tabindex="-1"></a>You might question whether this is a reasonable assumption to make – would it really be the case that crime rates are effectively randomly distributed around the start of DST? You would be right to do so. @doleac2015 point out that DST always starts on a Sunday, so we would need to account for this using day-of-week fixed effects. Weather patterns also influence crime rates, so it would be a good idea, though not strictly necessary, to also account for them.<span class="ot">[^2]</span></span>
 <span id="cb6-51"><a href="#cb6-51" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-52"><a href="#cb6-52" aria-hidden="true" tabindex="-1"></a>Formally, we would estimate the effect of DST on crime rates with the following equation: $$</span>
-<span id="cb6-53"><a href="#cb6-53" aria-hidden="true" tabindex="-1"></a>crime = \alpha + \beta_1 days + \beta_2 DST + \beta_3 DST*days + \delta W + \gamma_{dow}</span>
-<span id="cb6-54"><a href="#cb6-54" aria-hidden="true" tabindex="-1"></a>$$ {#eq-rdd} where $days$ is the number of days from the start of DST, $DST$ is a dummy variable equal to 0 before the start of DST and 1 after, $W$ refers to weather variables, and $\gamma_{dow}$ are day-of-week fixed effects. The coefficient in front of $DST$ is what we are interested in. I will first use a 60 day range around the start of DST, but later on I'll alter the range as a robustness check on the initial results.</span>
-<span id="cb6-55"><a href="#cb6-55" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-56"><a href="#cb6-56" aria-hidden="true" tabindex="-1"></a><span class="fu"># The Data</span></span>
+<span id="cb6-52"><a href="#cb6-52" aria-hidden="true" tabindex="-1"></a><span class="ot">[^2]: </span>The RDD would ensure that estimates of the effect of DST are unbiased even when not accounting for weather, but including weather variables can improve the precision of our estimate.</span>
+<span id="cb6-53"><a href="#cb6-53" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-54"><a href="#cb6-54" aria-hidden="true" tabindex="-1"></a>Formally, we would estimate the effect of DST on crime rates with the following equation: $$</span>
+<span id="cb6-55"><a href="#cb6-55" aria-hidden="true" tabindex="-1"></a>crime = \alpha + \beta_1 days + \beta_2 DST + \beta_3 DST*days + \delta W + \gamma_{dow}</span>
+<span id="cb6-56"><a href="#cb6-56" aria-hidden="true" tabindex="-1"></a>$$ {#eq-rdd} where $days$ is the number of days from the start of DST, $DST$ is a dummy variable equal to 0 before the start of DST and 1 after, $W$ refers to weather variables, and $\gamma_{dow}$ are day-of-week fixed effects. The coefficient in front of $DST$ is what we are interested in. The choice of bandwidth is a bit arbitrary because we want an unbiased yet reasonably certain estimate of the effect of DST, so I will first use the bandwidth chosen by @doleac2015 (21 days), but later on I'll alter the bandwidth as a robustness check on the initial results.</span>
 <span id="cb6-57"><a href="#cb6-57" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-58"><a href="#cb6-58" aria-hidden="true" tabindex="-1"></a>I've gathered crime data from the <span class="co">[</span><span class="ot">Vancouver Police Department website</span><span class="co">](https://geodash.%20vpd.ca/opendata/)</span> and weather data from the <span class="co">[</span><span class="ot">Vancouver Weatherstats website</span><span class="co">](https://vancouver.weatherstats.ca/)</span>. Here's a table showing some of the data after merging and wrangling everything.</span>
+<span id="cb6-58"><a href="#cb6-58" aria-hidden="true" tabindex="-1"></a><span class="fu"># The Data</span></span>
 <span id="cb6-59"><a href="#cb6-59" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-60"><a href="#cb6-60" aria-hidden="true" tabindex="-1"></a><span class="in">```{r data}</span></span>
-<span id="cb6-61"><a href="#cb6-61" aria-hidden="true" tabindex="-1"></a>merged_data_clean <span class="ot">&lt;-</span> <span class="fu">read_csv</span>(<span class="st">"https://raw.githubusercontent.com/TopologicalDonut/My-Projects/refs/heads/main/Vancouver%20Crime%20Analysis/Data/Processed/merged_data_clean.csv"</span>)</span>
-<span id="cb6-62"><a href="#cb6-62" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-63"><a href="#cb6-63" aria-hidden="true" tabindex="-1"></a><span class="co"># Show first 10 rows of cleaned data</span></span>
-<span id="cb6-64"><a href="#cb6-64" aria-hidden="true" tabindex="-1"></a>data_summary <span class="ot">&lt;-</span> merged_data_clean <span class="sc">%&gt;%</span></span>
-<span id="cb6-65"><a href="#cb6-65" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(date, num_property_crime_perht, num_violent_crime_perht, </span>
-<span id="cb6-66"><a href="#cb6-66" aria-hidden="true" tabindex="-1"></a>         avg_temperature, rain, days_from_dst, dst_dummy, day_of_week) <span class="sc">%&gt;%</span></span>
-<span id="cb6-67"><a href="#cb6-67" aria-hidden="true" tabindex="-1"></a>  <span class="fu">head</span>(<span class="dv">10</span>)  </span>
-<span id="cb6-68"><a href="#cb6-68" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-69"><a href="#cb6-69" aria-hidden="true" tabindex="-1"></a><span class="fu">kbl</span>(data_summary,</span>
-<span id="cb6-70"><a href="#cb6-70" aria-hidden="true" tabindex="-1"></a>    <span class="at">col.names =</span> (<span class="fu">c</span>(<span class="st">"Date"</span>, <span class="st">"Property Crime per 100k"</span>, <span class="st">"Violent Crime per 100k"</span>,</span>
-<span id="cb6-71"><a href="#cb6-71" aria-hidden="true" tabindex="-1"></a>                   <span class="st">"Average Temperature"</span>, <span class="st">"Rain"</span>, <span class="st">"Days from DST"</span>, <span class="st">"DST Dummy"</span>,</span>
-<span id="cb6-72"><a href="#cb6-72" aria-hidden="true" tabindex="-1"></a>                   <span class="st">"Day of Week"</span>)),</span>
-<span id="cb6-73"><a href="#cb6-73" aria-hidden="true" tabindex="-1"></a>    <span class="at">align =</span> <span class="fu">c</span>(<span class="st">'l'</span>, <span class="st">'c'</span>, <span class="st">'c'</span>, <span class="st">'c'</span>, <span class="st">'c'</span>, <span class="st">'c'</span>, <span class="st">'c'</span>, <span class="st">'c'</span>),</span>
-<span id="cb6-74"><a href="#cb6-74" aria-hidden="true" tabindex="-1"></a>    <span class="at">booktabs =</span> T,</span>
-<span id="cb6-75"><a href="#cb6-75" aria-hidden="true" tabindex="-1"></a>    <span class="at">linesep =</span> <span class="st">""</span>,</span>
-<span id="cb6-76"><a href="#cb6-76" aria-hidden="true" tabindex="-1"></a>    <span class="at">digits =</span> <span class="dv">3</span>,</span>
-<span id="cb6-77"><a href="#cb6-77" aria-hidden="true" tabindex="-1"></a>    <span class="at">caption =</span> <span class="st">"First 10 Rows of Cleaned Data"</span>) <span class="sc">%&gt;%</span></span>
-<span id="cb6-78"><a href="#cb6-78" aria-hidden="true" tabindex="-1"></a>  <span class="fu">column_spec</span>(<span class="dv">1</span>, <span class="at">width =</span> <span class="st">"8em"</span>) <span class="sc">%&gt;%</span></span>
-<span id="cb6-79"><a href="#cb6-79" aria-hidden="true" tabindex="-1"></a>  <span class="fu">column_spec</span>(<span class="dv">2</span>, <span class="at">width =</span> <span class="st">"8em"</span>) <span class="sc">%&gt;%</span></span>
-<span id="cb6-80"><a href="#cb6-80" aria-hidden="true" tabindex="-1"></a>  <span class="fu">column_spec</span>(<span class="dv">3</span>, <span class="at">width =</span> <span class="st">"8em"</span>)</span>
-<span id="cb6-81"><a href="#cb6-81" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
-<span id="cb6-82"><a href="#cb6-82" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-83"><a href="#cb6-83" aria-hidden="true" tabindex="-1"></a>Note that the units for rainfall are mm, and Sunday is considered the first day of the week for the Day of Week column. The raw crime data was split into various types of theft, homicide, and offences against another person. I combined the crime into two main categories: property and violent.</span>
+<span id="cb6-60"><a href="#cb6-60" aria-hidden="true" tabindex="-1"></a>I've gathered crime data from the <span class="co">[</span><span class="ot">Vancouver Police Department website</span><span class="co">](https://geodash.%20vpd.ca/opendata/)</span> and weather data from the <span class="co">[</span><span class="ot">Vancouver Weatherstats website</span><span class="co">](https://vancouver.weatherstats.ca/)</span>. Here's a table showing some of the data after merging and wrangling everything.</span>
+<span id="cb6-61"><a href="#cb6-61" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-62"><a href="#cb6-62" aria-hidden="true" tabindex="-1"></a><span class="in">```{r data}</span></span>
+<span id="cb6-63"><a href="#cb6-63" aria-hidden="true" tabindex="-1"></a>merged_data_clean <span class="ot">&lt;-</span> <span class="fu">read_csv</span>(<span class="st">"https://raw.githubusercontent.com/TopologicalDonut/My-Projects/refs/heads/main/Vancouver%20Crime%20Analysis/Data/Processed/merged_data_clean.csv"</span>)</span>
+<span id="cb6-64"><a href="#cb6-64" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-65"><a href="#cb6-65" aria-hidden="true" tabindex="-1"></a><span class="co"># Show first 10 rows of cleaned data</span></span>
+<span id="cb6-66"><a href="#cb6-66" aria-hidden="true" tabindex="-1"></a>data_summary <span class="ot">&lt;-</span> merged_data_clean <span class="sc">%&gt;%</span></span>
+<span id="cb6-67"><a href="#cb6-67" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(date, num_property_crime_perht, num_violent_crime_perht, </span>
+<span id="cb6-68"><a href="#cb6-68" aria-hidden="true" tabindex="-1"></a>         avg_temperature, rain, days_from_dst, dst_dummy, day_of_week) <span class="sc">%&gt;%</span></span>
+<span id="cb6-69"><a href="#cb6-69" aria-hidden="true" tabindex="-1"></a>  <span class="fu">head</span>(<span class="dv">10</span>)  </span>
+<span id="cb6-70"><a href="#cb6-70" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-71"><a href="#cb6-71" aria-hidden="true" tabindex="-1"></a><span class="fu">kbl</span>(data_summary,</span>
+<span id="cb6-72"><a href="#cb6-72" aria-hidden="true" tabindex="-1"></a>    <span class="at">col.names =</span> (<span class="fu">c</span>(<span class="st">"Date"</span>, <span class="st">"Property Crime per 100k"</span>, <span class="st">"Violent Crime per 100k"</span>,</span>
+<span id="cb6-73"><a href="#cb6-73" aria-hidden="true" tabindex="-1"></a>                   <span class="st">"Average Temperature"</span>, <span class="st">"Rain"</span>, <span class="st">"Days from DST"</span>, <span class="st">"DST Dummy"</span>,</span>
+<span id="cb6-74"><a href="#cb6-74" aria-hidden="true" tabindex="-1"></a>                   <span class="st">"Day of Week"</span>)),</span>
+<span id="cb6-75"><a href="#cb6-75" aria-hidden="true" tabindex="-1"></a>    <span class="at">align =</span> <span class="fu">c</span>(<span class="st">'l'</span>, <span class="st">'c'</span>, <span class="st">'c'</span>, <span class="st">'c'</span>, <span class="st">'c'</span>, <span class="st">'c'</span>, <span class="st">'c'</span>, <span class="st">'c'</span>),</span>
+<span id="cb6-76"><a href="#cb6-76" aria-hidden="true" tabindex="-1"></a>    <span class="at">booktabs =</span> T,</span>
+<span id="cb6-77"><a href="#cb6-77" aria-hidden="true" tabindex="-1"></a>    <span class="at">linesep =</span> <span class="st">""</span>,</span>
+<span id="cb6-78"><a href="#cb6-78" aria-hidden="true" tabindex="-1"></a>    <span class="at">digits =</span> <span class="dv">3</span>,</span>
+<span id="cb6-79"><a href="#cb6-79" aria-hidden="true" tabindex="-1"></a>    <span class="at">caption =</span> <span class="st">"First 10 Rows of Cleaned Data"</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb6-80"><a href="#cb6-80" aria-hidden="true" tabindex="-1"></a>  <span class="fu">column_spec</span>(<span class="dv">1</span>, <span class="at">width =</span> <span class="st">"8em"</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb6-81"><a href="#cb6-81" aria-hidden="true" tabindex="-1"></a>  <span class="fu">column_spec</span>(<span class="dv">2</span>, <span class="at">width =</span> <span class="st">"8em"</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb6-82"><a href="#cb6-82" aria-hidden="true" tabindex="-1"></a>  <span class="fu">column_spec</span>(<span class="dv">3</span>, <span class="at">width =</span> <span class="st">"8em"</span>)</span>
+<span id="cb6-83"><a href="#cb6-83" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
 <span id="cb6-84"><a href="#cb6-84" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-85"><a href="#cb6-85" aria-hidden="true" tabindex="-1"></a><span class="fu"># The Results</span></span>
+<span id="cb6-85"><a href="#cb6-85" aria-hidden="true" tabindex="-1"></a>Note that the units for rainfall are mm, and Sunday is considered the first day of the week for the Day of Week column. The raw crime data was split into various types of theft, homicide, and offences against another person. I combined the crime into two main categories: property and violent.</span>
 <span id="cb6-86"><a href="#cb6-86" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-87"><a href="#cb6-87" aria-hidden="true" tabindex="-1"></a>RDD happens to be easy to visualize, so I'll show some preliminary graphs before presenting an exact estimate of the effect of DST on crime rates. If there is a notable effect, then we would expect to see a "jump" in crime rates once DST starts.</span>
+<span id="cb6-87"><a href="#cb6-87" aria-hidden="true" tabindex="-1"></a><span class="fu"># The Results</span></span>
 <span id="cb6-88"><a href="#cb6-88" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-91"><a href="#cb6-91" aria-hidden="true" tabindex="-1"></a><span class="in">```{r}</span></span>
-<span id="cb6-92"><a href="#cb6-92" aria-hidden="true" tabindex="-1"></a><span class="co">#| label: fig-rdd</span></span>
-<span id="cb6-93"><a href="#cb6-93" aria-hidden="true" tabindex="-1"></a><span class="co">#| fig-cap: "Graphs of the average crime rate per 100,000 people each day 60 days before and after the start of DST."</span></span>
-<span id="cb6-94"><a href="#cb6-94" aria-hidden="true" tabindex="-1"></a><span class="co">#| classes: dark-light</span></span>
-<span id="cb6-95"><a href="#cb6-95" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-96"><a href="#cb6-96" aria-hidden="true" tabindex="-1"></a><span class="fu">darkmode_theme_set</span>(</span>
-<span id="cb6-97"><a href="#cb6-97" aria-hidden="true" tabindex="-1"></a>  <span class="at">dark =</span> ggthemes<span class="sc">::</span><span class="fu">theme_stata</span>(<span class="at">scheme =</span> <span class="st">"s1rcolor"</span>),</span>
-<span id="cb6-98"><a href="#cb6-98" aria-hidden="true" tabindex="-1"></a>  <span class="at">light =</span> ggthemes<span class="sc">::</span><span class="fu">theme_stata</span>(<span class="at">scheme =</span> <span class="st">"s1color"</span>)</span>
-<span id="cb6-99"><a href="#cb6-99" aria-hidden="true" tabindex="-1"></a>)</span>
-<span id="cb6-100"><a href="#cb6-100" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-101"><a href="#cb6-101" aria-hidden="true" tabindex="-1"></a><span class="co"># Grouping crime into average per day so that the graphs are readable. Otherwise there'd be too many data points.</span></span>
-<span id="cb6-102"><a href="#cb6-102" aria-hidden="true" tabindex="-1"></a>avg_crime_by_day <span class="ot">&lt;-</span> merged_data_clean <span class="sc">%&gt;%</span></span>
-<span id="cb6-103"><a href="#cb6-103" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(days_from_dst, dst_dummy) <span class="sc">%&gt;%</span></span>
-<span id="cb6-104"><a href="#cb6-104" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarise</span>(</span>
-<span id="cb6-105"><a href="#cb6-105" aria-hidden="true" tabindex="-1"></a>    <span class="at">avg_property_crime =</span> <span class="fu">mean</span>(num_property_crime_perht),</span>
-<span id="cb6-106"><a href="#cb6-106" aria-hidden="true" tabindex="-1"></a>    <span class="at">avg_violent_crime =</span> <span class="fu">mean</span>(num_violent_crime_perht),</span>
-<span id="cb6-107"><a href="#cb6-107" aria-hidden="true" tabindex="-1"></a>    <span class="at">.groups =</span> <span class="st">"drop"</span></span>
-<span id="cb6-108"><a href="#cb6-108" aria-hidden="true" tabindex="-1"></a>  )</span>
-<span id="cb6-109"><a href="#cb6-109" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-110"><a href="#cb6-110" aria-hidden="true" tabindex="-1"></a>property_crime_plot <span class="ot">&lt;-</span> <span class="fu">ggplot</span>(avg_crime_by_day, <span class="fu">aes</span>(<span class="at">x =</span> days_from_dst, avg_property_crime)) <span class="sc">+</span></span>
-<span id="cb6-111"><a href="#cb6-111" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>(<span class="at">alpha =</span> <span class="fl">0.5</span>, <span class="at">colour =</span> <span class="st">"#e69a0e"</span>) <span class="sc">+</span></span>
-<span id="cb6-112"><a href="#cb6-112" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_smooth</span>(<span class="at">data =</span> <span class="fu">filter</span>(avg_crime_by_day, dst_dummy <span class="sc">==</span> <span class="dv">0</span>), </span>
-<span id="cb6-113"><a href="#cb6-113" aria-hidden="true" tabindex="-1"></a>              <span class="fu">aes</span>(<span class="at">x =</span> days_from_dst, <span class="at">y =</span> avg_property_crime), <span class="at">se =</span> <span class="cn">FALSE</span>, <span class="at">colour =</span> <span class="st">"#a011ed"</span>, <span class="at">linewidth =</span> <span class="fl">0.5</span>) <span class="sc">+</span></span>
-<span id="cb6-114"><a href="#cb6-114" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_smooth</span>(<span class="at">data =</span> <span class="fu">filter</span>(avg_crime_by_day, dst_dummy <span class="sc">==</span> <span class="dv">1</span>), </span>
-<span id="cb6-115"><a href="#cb6-115" aria-hidden="true" tabindex="-1"></a>              <span class="fu">aes</span>(<span class="at">x =</span> days_from_dst, <span class="at">y =</span> avg_property_crime), <span class="at">se =</span> <span class="cn">FALSE</span>, <span class="at">colour =</span> <span class="st">"red"</span>, <span class="at">linewidth =</span> <span class="fl">0.5</span>) <span class="sc">+</span></span>
-<span id="cb6-116"><a href="#cb6-116" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_vline</span>(<span class="at">xintercept =</span> <span class="dv">0</span>, <span class="at">linetype =</span> <span class="st">"dashed"</span>, <span class="at">colour =</span> <span class="st">"darkslategrey"</span>) <span class="sc">+</span></span>
-<span id="cb6-117"><a href="#cb6-117" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">title =</span> <span class="st">"Avg Property Crimes Around DST"</span>, <span class="at">x =</span> <span class="st">"Days from DST Start"</span>, <span class="at">y =</span> <span class="st">"Property Crimes per 100k"</span>)</span>
-<span id="cb6-118"><a href="#cb6-118" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-119"><a href="#cb6-119" aria-hidden="true" tabindex="-1"></a>violent_crime_plot <span class="ot">&lt;-</span> <span class="fu">ggplot</span>(avg_crime_by_day, <span class="fu">aes</span>(<span class="at">x =</span> days_from_dst, avg_violent_crime)) <span class="sc">+</span></span>
-<span id="cb6-120"><a href="#cb6-120" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>(<span class="at">alpha =</span> <span class="fl">0.5</span>, <span class="at">colour =</span> <span class="st">"#e69a0e"</span>) <span class="sc">+</span></span>
-<span id="cb6-121"><a href="#cb6-121" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_smooth</span>(<span class="at">data =</span> <span class="fu">filter</span>(avg_crime_by_day, dst_dummy <span class="sc">==</span> <span class="dv">0</span>), </span>
-<span id="cb6-122"><a href="#cb6-122" aria-hidden="true" tabindex="-1"></a>              <span class="fu">aes</span>(<span class="at">x =</span> days_from_dst, <span class="at">y =</span> avg_violent_crime), <span class="at">se =</span> <span class="cn">FALSE</span>, <span class="at">colour =</span> <span class="st">"#a011ed"</span>, <span class="at">linewidth =</span> <span class="fl">0.5</span>) <span class="sc">+</span></span>
-<span id="cb6-123"><a href="#cb6-123" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_smooth</span>(<span class="at">data =</span> <span class="fu">filter</span>(avg_crime_by_day, dst_dummy <span class="sc">==</span> <span class="dv">1</span>), </span>
-<span id="cb6-124"><a href="#cb6-124" aria-hidden="true" tabindex="-1"></a>              <span class="fu">aes</span>(<span class="at">x =</span> days_from_dst, <span class="at">y =</span> avg_violent_crime), <span class="at">se =</span> <span class="cn">FALSE</span>, <span class="at">colour =</span> <span class="st">"red"</span>, <span class="at">linewidth =</span> <span class="fl">0.5</span>) <span class="sc">+</span></span>
-<span id="cb6-125"><a href="#cb6-125" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_vline</span>(<span class="at">xintercept =</span> <span class="dv">0</span>, <span class="at">linetype =</span> <span class="st">"dashed"</span>, <span class="at">colour =</span> <span class="st">"darkslategrey"</span>) <span class="sc">+</span></span>
-<span id="cb6-126"><a href="#cb6-126" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">title =</span> <span class="st">"Avg Violent Crimes Around DST"</span>, <span class="at">x =</span> <span class="st">"Days from DST Start"</span>, <span class="at">y =</span> <span class="st">"Violent Crimes per 100k"</span>)</span>
-<span id="cb6-127"><a href="#cb6-127" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-128"><a href="#cb6-128" aria-hidden="true" tabindex="-1"></a>property_crime_plot <span class="sc">/</span> violent_crime_plot</span>
-<span id="cb6-129"><a href="#cb6-129" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
-<span id="cb6-130"><a href="#cb6-130" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-131"><a href="#cb6-131" aria-hidden="true" tabindex="-1"></a>Based on the graphs, it seems like DST doesn't have any effect on crime rates in Vancouver. However, this graph doesn't include day-of-week fixed effects, so we need to use @eq-rdd to get a proper estimate of the effect of DST.</span>
-<span id="cb6-132"><a href="#cb6-132" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-133"><a href="#cb6-133" aria-hidden="true" tabindex="-1"></a><span class="in">```{r model estimation}</span></span>
-<span id="cb6-134"><a href="#cb6-134" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-135"><a href="#cb6-135" aria-hidden="true" tabindex="-1"></a>run_model <span class="ot">&lt;-</span> <span class="cf">function</span>(outcome, bandwidth) {</span>
-<span id="cb6-136"><a href="#cb6-136" aria-hidden="true" tabindex="-1"></a>  formula <span class="ot">&lt;-</span> <span class="fu">as.formula</span>(<span class="fu">paste</span>(outcome, <span class="st">"~ days_from_dst*dst_dummy + day_of_week + rain + avg_temperature"</span>))</span>
-<span id="cb6-137"><a href="#cb6-137" aria-hidden="true" tabindex="-1"></a>  <span class="fu">lm</span>(formula, <span class="at">data =</span> merged_data_clean, <span class="at">subset =</span> <span class="fu">abs</span>(days_from_dst) <span class="sc">&lt;=</span> bandwidth)</span>
-<span id="cb6-138"><a href="#cb6-138" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb6-89"><a href="#cb6-89" aria-hidden="true" tabindex="-1"></a>RDD happens to be easy to visualize, so I'll show some preliminary graphs before presenting an exact estimate of the effect of DST on crime rates. If there is a notable effect, then we would expect to see a "jump" in crime rates once DST starts.</span>
+<span id="cb6-90"><a href="#cb6-90" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-93"><a href="#cb6-93" aria-hidden="true" tabindex="-1"></a><span class="in">```{r}</span></span>
+<span id="cb6-94"><a href="#cb6-94" aria-hidden="true" tabindex="-1"></a><span class="co">#| label: fig-rdd</span></span>
+<span id="cb6-95"><a href="#cb6-95" aria-hidden="true" tabindex="-1"></a><span class="co">#| fig-cap: "Graphs of the average crime rate per 100,000 people each day 60 days before and after the start of DST."</span></span>
+<span id="cb6-96"><a href="#cb6-96" aria-hidden="true" tabindex="-1"></a><span class="co">#| classes: dark-light</span></span>
+<span id="cb6-97"><a href="#cb6-97" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-98"><a href="#cb6-98" aria-hidden="true" tabindex="-1"></a><span class="fu">darkmode_theme_set</span>(</span>
+<span id="cb6-99"><a href="#cb6-99" aria-hidden="true" tabindex="-1"></a>  <span class="at">dark =</span> ggthemes<span class="sc">::</span><span class="fu">theme_stata</span>(<span class="at">scheme =</span> <span class="st">"s1rcolor"</span>),</span>
+<span id="cb6-100"><a href="#cb6-100" aria-hidden="true" tabindex="-1"></a>  <span class="at">light =</span> ggthemes<span class="sc">::</span><span class="fu">theme_stata</span>(<span class="at">scheme =</span> <span class="st">"s1color"</span>)</span>
+<span id="cb6-101"><a href="#cb6-101" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb6-102"><a href="#cb6-102" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-103"><a href="#cb6-103" aria-hidden="true" tabindex="-1"></a><span class="co"># Grouping crime into average per day so that the graphs are readable. Otherwise there'd be too many data points.</span></span>
+<span id="cb6-104"><a href="#cb6-104" aria-hidden="true" tabindex="-1"></a>avg_crime_by_day <span class="ot">&lt;-</span> merged_data_clean <span class="sc">%&gt;%</span></span>
+<span id="cb6-105"><a href="#cb6-105" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(days_from_dst, dst_dummy) <span class="sc">%&gt;%</span></span>
+<span id="cb6-106"><a href="#cb6-106" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarise</span>(</span>
+<span id="cb6-107"><a href="#cb6-107" aria-hidden="true" tabindex="-1"></a>    <span class="at">avg_property_crime =</span> <span class="fu">mean</span>(num_property_crime_perht),</span>
+<span id="cb6-108"><a href="#cb6-108" aria-hidden="true" tabindex="-1"></a>    <span class="at">avg_violent_crime =</span> <span class="fu">mean</span>(num_violent_crime_perht),</span>
+<span id="cb6-109"><a href="#cb6-109" aria-hidden="true" tabindex="-1"></a>    <span class="at">.groups =</span> <span class="st">"drop"</span></span>
+<span id="cb6-110"><a href="#cb6-110" aria-hidden="true" tabindex="-1"></a>  )</span>
+<span id="cb6-111"><a href="#cb6-111" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-112"><a href="#cb6-112" aria-hidden="true" tabindex="-1"></a><span class="co"># Need long format for graphs</span></span>
+<span id="cb6-113"><a href="#cb6-113" aria-hidden="true" tabindex="-1"></a>avg_crime_by_day_long <span class="ot">&lt;-</span> avg_crime_by_day <span class="sc">%&gt;%</span></span>
+<span id="cb6-114"><a href="#cb6-114" aria-hidden="true" tabindex="-1"></a>  <span class="fu">pivot_longer</span>(</span>
+<span id="cb6-115"><a href="#cb6-115" aria-hidden="true" tabindex="-1"></a>    <span class="at">cols =</span> <span class="fu">c</span>(avg_property_crime, avg_violent_crime),</span>
+<span id="cb6-116"><a href="#cb6-116" aria-hidden="true" tabindex="-1"></a>    <span class="at">names_to =</span> <span class="st">"crime_type"</span>,</span>
+<span id="cb6-117"><a href="#cb6-117" aria-hidden="true" tabindex="-1"></a>    <span class="at">values_to =</span> <span class="st">"crime_rate"</span></span>
+<span id="cb6-118"><a href="#cb6-118" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">%&gt;%</span></span>
+<span id="cb6-119"><a href="#cb6-119" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">crime_type =</span> <span class="fu">case_when</span>(</span>
+<span id="cb6-120"><a href="#cb6-120" aria-hidden="true" tabindex="-1"></a>    crime_type <span class="sc">==</span> <span class="st">"avg_property_crime"</span> <span class="sc">~</span> <span class="st">"Property Crime"</span>,</span>
+<span id="cb6-121"><a href="#cb6-121" aria-hidden="true" tabindex="-1"></a>    crime_type <span class="sc">==</span> <span class="st">"avg_violent_crime"</span> <span class="sc">~</span> <span class="st">"Violent Crime"</span></span>
+<span id="cb6-122"><a href="#cb6-122" aria-hidden="true" tabindex="-1"></a>  ))</span>
+<span id="cb6-123"><a href="#cb6-123" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-124"><a href="#cb6-124" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(avg_crime_by_day_long, <span class="fu">aes</span>(<span class="at">x =</span> days_from_dst, <span class="at">y =</span> crime_rate)) <span class="sc">+</span></span>
+<span id="cb6-125"><a href="#cb6-125" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>(<span class="at">alpha =</span> <span class="fl">0.5</span>, <span class="at">colour =</span> <span class="st">"#e69a0e"</span>) <span class="sc">+</span></span>
+<span id="cb6-126"><a href="#cb6-126" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_smooth</span>(<span class="at">data =</span> <span class="fu">filter</span>(avg_crime_by_day_long, dst_dummy <span class="sc">==</span> <span class="dv">0</span>), </span>
+<span id="cb6-127"><a href="#cb6-127" aria-hidden="true" tabindex="-1"></a>              <span class="at">se =</span> <span class="cn">FALSE</span>, <span class="at">colour =</span> <span class="st">"#a011ed"</span>, <span class="at">linewidth =</span> <span class="fl">0.5</span>) <span class="sc">+</span></span>
+<span id="cb6-128"><a href="#cb6-128" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_smooth</span>(<span class="at">data =</span> <span class="fu">filter</span>(avg_crime_by_day_long, dst_dummy <span class="sc">==</span> <span class="dv">1</span>), </span>
+<span id="cb6-129"><a href="#cb6-129" aria-hidden="true" tabindex="-1"></a>              <span class="at">se =</span> <span class="cn">FALSE</span>, <span class="at">colour =</span> <span class="st">"red"</span>, <span class="at">linewidth =</span> <span class="fl">0.5</span>) <span class="sc">+</span></span>
+<span id="cb6-130"><a href="#cb6-130" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_vline</span>(<span class="at">xintercept =</span> <span class="dv">0</span>, <span class="at">linetype =</span> <span class="st">"dashed"</span>, <span class="at">colour =</span> <span class="st">"darkslategrey"</span>) <span class="sc">+</span></span>
+<span id="cb6-131"><a href="#cb6-131" aria-hidden="true" tabindex="-1"></a>  <span class="fu">facet_wrap</span>(<span class="sc">~</span>crime_type, <span class="at">scales =</span> <span class="st">"free_y"</span>, <span class="at">ncol =</span> <span class="dv">1</span>) <span class="sc">+</span></span>
+<span id="cb6-132"><a href="#cb6-132" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">x =</span> <span class="st">"Days from DST Start"</span>, </span>
+<span id="cb6-133"><a href="#cb6-133" aria-hidden="true" tabindex="-1"></a>       <span class="at">y =</span> <span class="st">"Crimes per 100k"</span>,</span>
+<span id="cb6-134"><a href="#cb6-134" aria-hidden="true" tabindex="-1"></a>       <span class="at">title =</span> <span class="st">"Average Rate of Crimes Around DST"</span>)</span>
+<span id="cb6-135"><a href="#cb6-135" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-136"><a href="#cb6-136" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb6-137"><a href="#cb6-137" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-138"><a href="#cb6-138" aria-hidden="true" tabindex="-1"></a>Based on the graphs, it seems like DST doesn't have any effect on crime rates in Vancouver. However, this graph doesn't include day-of-week fixed effects, so we need to use @eq-rdd to get a proper estimate of the effect of DST.</span>
 <span id="cb6-139"><a href="#cb6-139" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-140"><a href="#cb6-140" aria-hidden="true" tabindex="-1"></a>model_property <span class="ot">&lt;-</span> <span class="fu">run_model</span>(<span class="st">"num_property_crime_perht"</span>, <span class="dv">60</span>)</span>
-<span id="cb6-141"><a href="#cb6-141" aria-hidden="true" tabindex="-1"></a>model_violent <span class="ot">&lt;-</span> <span class="fu">run_model</span>(<span class="st">"num_violent_crime_perht"</span>, <span class="dv">60</span>)</span>
-<span id="cb6-142"><a href="#cb6-142" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-143"><a href="#cb6-143" aria-hidden="true" tabindex="-1"></a>coef_property <span class="ot">&lt;-</span> <span class="fu">tidy</span>(model_property) <span class="sc">%&gt;%</span> </span>
-<span id="cb6-144"><a href="#cb6-144" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(term <span class="sc">==</span> <span class="st">"dst_dummy"</span>) <span class="sc">%&gt;%</span> </span>
-<span id="cb6-145"><a href="#cb6-145" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(estimate, std.error, statistic, p.value)</span>
+<span id="cb6-140"><a href="#cb6-140" aria-hidden="true" tabindex="-1"></a><span class="in">```{r model estimation}</span></span>
+<span id="cb6-141"><a href="#cb6-141" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-142"><a href="#cb6-142" aria-hidden="true" tabindex="-1"></a>run_model_linear <span class="ot">&lt;-</span> <span class="cf">function</span>(outcome, bandwidth) {</span>
+<span id="cb6-143"><a href="#cb6-143" aria-hidden="true" tabindex="-1"></a>  formula <span class="ot">&lt;-</span> <span class="fu">as.formula</span>(<span class="fu">paste</span>(outcome, <span class="st">"~ days_from_dst*dst_dummy + day_of_week + rain + avg_temperature"</span>))</span>
+<span id="cb6-144"><a href="#cb6-144" aria-hidden="true" tabindex="-1"></a>  <span class="fu">lm</span>(formula, <span class="at">data =</span> merged_data_clean, <span class="at">subset =</span> <span class="fu">abs</span>(days_from_dst) <span class="sc">&lt;=</span> bandwidth)</span>
+<span id="cb6-145"><a href="#cb6-145" aria-hidden="true" tabindex="-1"></a>}</span>
 <span id="cb6-146"><a href="#cb6-146" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-147"><a href="#cb6-147" aria-hidden="true" tabindex="-1"></a>coef_violent <span class="ot">&lt;-</span> <span class="fu">tidy</span>(model_violent) <span class="sc">%&gt;%</span> </span>
-<span id="cb6-148"><a href="#cb6-148" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(term <span class="sc">==</span> <span class="st">"dst_dummy"</span>) <span class="sc">%&gt;%</span> </span>
-<span id="cb6-149"><a href="#cb6-149" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(estimate, std.error, statistic, p.value)</span>
+<span id="cb6-147"><a href="#cb6-147" aria-hidden="true" tabindex="-1"></a><span class="co"># 3 week bandwidth for initial results.</span></span>
+<span id="cb6-148"><a href="#cb6-148" aria-hidden="true" tabindex="-1"></a>model_property <span class="ot">&lt;-</span> <span class="fu">run_model_linear</span>(<span class="st">"num_property_crime_perht"</span>, <span class="dv">21</span>)</span>
+<span id="cb6-149"><a href="#cb6-149" aria-hidden="true" tabindex="-1"></a>model_violent <span class="ot">&lt;-</span> <span class="fu">run_model_linear</span>(<span class="st">"num_violent_crime_perht"</span>, <span class="dv">21</span>)</span>
 <span id="cb6-150"><a href="#cb6-150" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-151"><a href="#cb6-151" aria-hidden="true" tabindex="-1"></a>coef_table <span class="ot">&lt;-</span> <span class="fu">rbind</span>(</span>
-<span id="cb6-152"><a href="#cb6-152" aria-hidden="true" tabindex="-1"></a>  <span class="fu">data.frame</span>(<span class="at">Crime =</span> <span class="st">"Property"</span>, coef_property),</span>
-<span id="cb6-153"><a href="#cb6-153" aria-hidden="true" tabindex="-1"></a>  <span class="fu">data.frame</span>(<span class="at">Crime =</span> <span class="st">"Violent"</span>, coef_violent)</span>
-<span id="cb6-154"><a href="#cb6-154" aria-hidden="true" tabindex="-1"></a>)</span>
-<span id="cb6-155"><a href="#cb6-155" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-156"><a href="#cb6-156" aria-hidden="true" tabindex="-1"></a><span class="fu">kbl</span>(coef_table, </span>
-<span id="cb6-157"><a href="#cb6-157" aria-hidden="true" tabindex="-1"></a>    <span class="at">col.names =</span> <span class="fu">c</span>(<span class="st">"Crime Type"</span>, <span class="st">"Estimate"</span>, <span class="st">"Std. Error"</span>, <span class="st">"t-statistic"</span>, <span class="st">"p-value"</span>),</span>
-<span id="cb6-158"><a href="#cb6-158" aria-hidden="true" tabindex="-1"></a>    <span class="at">align =</span> <span class="fu">c</span>(<span class="st">'l'</span>, <span class="st">'c'</span>, <span class="st">'c'</span>, <span class="st">'c'</span>, <span class="st">'c'</span>),</span>
-<span id="cb6-159"><a href="#cb6-159" aria-hidden="true" tabindex="-1"></a>    <span class="at">digits =</span> <span class="dv">3</span>,</span>
-<span id="cb6-160"><a href="#cb6-160" aria-hidden="true" tabindex="-1"></a>    <span class="at">caption =</span> <span class="st">"Effect of DST on Crime per 100k"</span>,</span>
-<span id="cb6-161"><a href="#cb6-161" aria-hidden="true" tabindex="-1"></a>    <span class="at">booktabs =</span> T) <span class="sc">%&gt;%</span></span>
-<span id="cb6-162"><a href="#cb6-162" aria-hidden="true" tabindex="-1"></a>  <span class="fu">add_header_above</span>(<span class="fu">c</span>(<span class="st">" "</span> <span class="ot">=</span> <span class="dv">1</span>, <span class="st">"Statistics"</span> <span class="ot">=</span> <span class="dv">4</span>))</span>
-<span id="cb6-163"><a href="#cb6-163" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
-<span id="cb6-164"><a href="#cb6-164" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-165"><a href="#cb6-165" aria-hidden="true" tabindex="-1"></a>Our estimates confirm the intuition from the graphs. Both estimates are close to 0,<span class="ot">[^3]</span> and the p-values suggest that it's highly likely to see estimates of this magnitude under the null hypothesis that there is no effect. In other words, we would expect to see these results if DST has no effect on crime in Vancouver.</span>
-<span id="cb6-166"><a href="#cb6-166" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-167"><a href="#cb6-167" aria-hidden="true" tabindex="-1"></a><span class="ot">[^3]: </span>The violent crime estimate displays 0 since it was rounded to 3 decimal places.</span>
-<span id="cb6-168"><a href="#cb6-168" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-169"><a href="#cb6-169" aria-hidden="true" tabindex="-1"></a><span class="fu"># Robustness Checks</span></span>
-<span id="cb6-170"><a href="#cb6-170" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-171"><a href="#cb6-171" aria-hidden="true" tabindex="-1"></a>It's possible that the functional form of @eq-rdd does not adequately capture the true effect of DST on crime. It's also possible that the 60 day range I chose is too wide, thus biasing the results. To check whether either of these are actual problems, I'll run some additional analyses with a cubic functional form: $$</span>
-<span id="cb6-172"><a href="#cb6-172" aria-hidden="true" tabindex="-1"></a>\begin{aligned}</span>
-<span id="cb6-173"><a href="#cb6-173" aria-hidden="true" tabindex="-1"></a>crime &amp;= \alpha + \beta_1 days + \beta_2 days^2 + \beta_3 days^3 + \beta_4 DST</span>
-<span id="cb6-174"><a href="#cb6-174" aria-hidden="true" tabindex="-1"></a><span class="sc">\\</span> &amp;+ (\beta_5 days + \beta_6 days^2 + \beta_7 days^3)*DST + \delta W + \gamma_{dow}</span>
-<span id="cb6-175"><a href="#cb6-175" aria-hidden="true" tabindex="-1"></a>\end{aligned}</span>
-<span id="cb6-176"><a href="#cb6-176" aria-hidden="true" tabindex="-1"></a>$$ along with a 14 day range of days around the start of DST with the default @eq-rdd.</span>
-<span id="cb6-177"><a href="#cb6-177" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-178"><a href="#cb6-178" aria-hidden="true" tabindex="-1"></a><span class="in">```{r robustness check}</span></span>
-<span id="cb6-179"><a href="#cb6-179" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-180"><a href="#cb6-180" aria-hidden="true" tabindex="-1"></a>model_property_cubic <span class="ot">&lt;-</span> <span class="fu">lm</span>(num_property_crime_perht <span class="sc">~</span> <span class="fu">poly</span>(days_from_dst, <span class="dv">3</span>, <span class="at">raw=</span><span class="cn">TRUE</span>)<span class="sc">*</span>dst_dummy <span class="sc">+</span></span>
-<span id="cb6-181"><a href="#cb6-181" aria-hidden="true" tabindex="-1"></a>                             day_of_week <span class="sc">+</span> rain <span class="sc">+</span> avg_temperature, <span class="at">data =</span> merged_data_clean)</span>
-<span id="cb6-182"><a href="#cb6-182" aria-hidden="true" tabindex="-1"></a>model_violent_cubic <span class="ot">&lt;-</span> <span class="fu">lm</span>(num_violent_crime_perht <span class="sc">~</span> <span class="fu">poly</span>(days_from_dst, <span class="dv">3</span>, <span class="at">raw=</span><span class="cn">TRUE</span>)<span class="sc">*</span>dst_dummy </span>
-<span id="cb6-183"><a href="#cb6-183" aria-hidden="true" tabindex="-1"></a>                           <span class="sc">+</span> day_of_week <span class="sc">+</span> rain <span class="sc">+</span> avg_temperature, <span class="at">data =</span> merged_data_clean)</span>
-<span id="cb6-184"><a href="#cb6-184" aria-hidden="true" tabindex="-1"></a>model_property_altband <span class="ot">&lt;-</span> <span class="fu">run_model</span>(<span class="st">"num_property_crime_perht"</span>, <span class="dv">14</span>)</span>
-<span id="cb6-185"><a href="#cb6-185" aria-hidden="true" tabindex="-1"></a>model_violent_altband <span class="ot">&lt;-</span> <span class="fu">run_model</span>(<span class="st">"num_violent_crime_perht"</span>, <span class="dv">14</span>)</span>
-<span id="cb6-186"><a href="#cb6-186" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-187"><a href="#cb6-187" aria-hidden="true" tabindex="-1"></a>extract_dst_coef <span class="ot">&lt;-</span> <span class="cf">function</span>(model, model_name) {</span>
-<span id="cb6-188"><a href="#cb6-188" aria-hidden="true" tabindex="-1"></a>  <span class="fu">tidy</span>(model) <span class="sc">%&gt;%</span> </span>
-<span id="cb6-189"><a href="#cb6-189" aria-hidden="true" tabindex="-1"></a>    <span class="fu">filter</span>(term <span class="sc">==</span> <span class="st">"dst_dummy"</span>) <span class="sc">%&gt;%</span> </span>
-<span id="cb6-190"><a href="#cb6-190" aria-hidden="true" tabindex="-1"></a>    <span class="fu">select</span>(estimate, std.error, statistic, p.value) <span class="sc">%&gt;%</span></span>
-<span id="cb6-191"><a href="#cb6-191" aria-hidden="true" tabindex="-1"></a>    <span class="fu">mutate</span>(<span class="at">Model =</span> model_name)</span>
-<span id="cb6-192"><a href="#cb6-192" aria-hidden="true" tabindex="-1"></a>}</span>
-<span id="cb6-193"><a href="#cb6-193" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-194"><a href="#cb6-194" aria-hidden="true" tabindex="-1"></a>coef_table <span class="ot">&lt;-</span> <span class="fu">bind_rows</span>(</span>
-<span id="cb6-195"><a href="#cb6-195" aria-hidden="true" tabindex="-1"></a>  <span class="fu">extract_dst_coef</span>(model_violent_cubic, <span class="st">"Violent - Cubic"</span>),</span>
-<span id="cb6-196"><a href="#cb6-196" aria-hidden="true" tabindex="-1"></a>  <span class="fu">extract_dst_coef</span>(model_property_cubic, <span class="st">"Property - Cubic"</span>),</span>
-<span id="cb6-197"><a href="#cb6-197" aria-hidden="true" tabindex="-1"></a>  <span class="fu">extract_dst_coef</span>(model_violent_altband, <span class="st">"Violent - 14 Day Bandwidth"</span>),</span>
-<span id="cb6-198"><a href="#cb6-198" aria-hidden="true" tabindex="-1"></a>  <span class="fu">extract_dst_coef</span>(model_property_altband, <span class="st">"Property - 14 Day Bandwidth"</span>)</span>
-<span id="cb6-199"><a href="#cb6-199" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">%&gt;%</span></span>
-<span id="cb6-200"><a href="#cb6-200" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">Crime_Type =</span> <span class="fu">ifelse</span>(<span class="fu">grepl</span>(<span class="st">"Violent"</span>, Model), <span class="st">"Violent"</span>, <span class="st">"Property"</span>),</span>
-<span id="cb6-201"><a href="#cb6-201" aria-hidden="true" tabindex="-1"></a>         <span class="at">Model_Type =</span> <span class="fu">gsub</span>(<span class="st">"Violent - |Property - "</span>, <span class="st">""</span>, Model)) <span class="sc">%&gt;%</span></span>
-<span id="cb6-202"><a href="#cb6-202" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(Model_Type, Crime_Type,<span class="fu">everything</span>(), <span class="sc">-</span>Model)</span>
-<span id="cb6-203"><a href="#cb6-203" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-204"><a href="#cb6-204" aria-hidden="true" tabindex="-1"></a><span class="fu">kbl</span>(coef_table[<span class="dv">2</span><span class="sc">:</span><span class="dv">6</span>], </span>
-<span id="cb6-205"><a href="#cb6-205" aria-hidden="true" tabindex="-1"></a>      <span class="at">col.names =</span> <span class="fu">c</span>(<span class="st">"Crime Type"</span>, <span class="st">"Estimate"</span>, <span class="st">"Std. Error"</span>, <span class="st">"t-statistic"</span>, <span class="st">"p-value"</span>),</span>
-<span id="cb6-206"><a href="#cb6-206" aria-hidden="true" tabindex="-1"></a>      <span class="at">digits =</span> <span class="dv">3</span>,</span>
-<span id="cb6-207"><a href="#cb6-207" aria-hidden="true" tabindex="-1"></a>      <span class="at">align =</span> <span class="fu">c</span>(<span class="st">'l'</span>, <span class="st">'c'</span>, <span class="st">'c'</span>, <span class="st">'c'</span>, <span class="st">'c'</span>),</span>
-<span id="cb6-208"><a href="#cb6-208" aria-hidden="true" tabindex="-1"></a>      <span class="at">caption =</span> <span class="st">"Effect of DST Across Different Models"</span>) <span class="sc">%&gt;%</span></span>
-<span id="cb6-209"><a href="#cb6-209" aria-hidden="true" tabindex="-1"></a>  <span class="fu">pack_rows</span>(<span class="st">"Cubic Model"</span>, <span class="dv">1</span>, <span class="dv">2</span>) <span class="sc">%&gt;%</span></span>
-<span id="cb6-210"><a href="#cb6-210" aria-hidden="true" tabindex="-1"></a>  <span class="fu">pack_rows</span>(<span class="st">"14 Day Bandwidth"</span>, <span class="dv">3</span>, <span class="dv">4</span>) <span class="sc">%&gt;%</span></span>
-<span id="cb6-211"><a href="#cb6-211" aria-hidden="true" tabindex="-1"></a>  <span class="fu">add_header_above</span>(<span class="fu">c</span>(<span class="st">" "</span> <span class="ot">=</span> <span class="dv">1</span>, <span class="st">"Statistics"</span> <span class="ot">=</span> <span class="dv">4</span>))</span>
-<span id="cb6-212"><a href="#cb6-212" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
-<span id="cb6-213"><a href="#cb6-213" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-214"><a href="#cb6-214" aria-hidden="true" tabindex="-1"></a>As we can see, none of the other models have significant results, and the estimates for all the models are fairly close. It seems like DST indeed has little to no effect on crime in Vancouver.</span>
-<span id="cb6-215"><a href="#cb6-215" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-216"><a href="#cb6-216" aria-hidden="true" tabindex="-1"></a><span class="fu"># Conclusion</span></span>
-<span id="cb6-217"><a href="#cb6-217" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-218"><a href="#cb6-218" aria-hidden="true" tabindex="-1"></a>To recap, I've applied the sharp RDD methodology of @doleac2015 to Vancouver, yielding results that contrast with previous findings from the United States:</span>
-<span id="cb6-219"><a href="#cb6-219" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-220"><a href="#cb6-220" aria-hidden="true" tabindex="-1"></a><span class="ss">1.  </span>There is no statistically significant impact of DST on either property or violent crime rates in Vancouver.</span>
-<span id="cb6-221"><a href="#cb6-221" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-222"><a href="#cb6-222" aria-hidden="true" tabindex="-1"></a><span class="ss">2.  </span>This lack of effect persists across different model specifications and bandwidths (range of days), suggesting robust results.</span>
-<span id="cb6-223"><a href="#cb6-223" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-224"><a href="#cb6-224" aria-hidden="true" tabindex="-1"></a>A couple takeaways from these results:</span>
-<span id="cb6-225"><a href="#cb6-225" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-226"><a href="#cb6-226" aria-hidden="true" tabindex="-1"></a><span class="ss">1.  </span>**Local Context Matters**: This might be a bit obvious for anyone who understands that RDD estimates local treatment effects, but to reiterate – the discrepancy between these results and those of @doleac2015 underscores the importance of local context in understanding the relationship between ambient light and crime. Factors such as baseline daylight hours, urban infrastructure, and social patterns may all play a role in mediating the effect of DST on criminal activity.</span>
-<span id="cb6-227"><a href="#cb6-227" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-228"><a href="#cb6-228" aria-hidden="true" tabindex="-1"></a><span class="ss">2.  </span>**Policy Implications**: For policymakers in Vancouver considering the potential benefits or drawbacks of DST, these results suggest that crime reduction should not be considered a relevant factor in these deliberations. The lack of a detectable effect on crime rates indicates that other considerations, such as energy usage or public health, may be more relevant to DST policy decisions.</span>
-<span id="cb6-229"><a href="#cb6-229" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-230"><a href="#cb6-230" aria-hidden="true" tabindex="-1"></a>And of course, I'm personally happy that there is one less reason to have DST if we're considering its effects in Vancouver.<span class="ot">[^4]</span></span>
-<span id="cb6-231"><a href="#cb6-231" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-232"><a href="#cb6-232" aria-hidden="true" tabindex="-1"></a><span class="ot">[^4]: </span>This is a joke – dealing with DST is an easy trade-off for lower crime.</span>
+<span id="cb6-151"><a href="#cb6-151" aria-hidden="true" tabindex="-1"></a><span class="co"># vcov for robust SE.</span></span>
+<span id="cb6-152"><a href="#cb6-152" aria-hidden="true" tabindex="-1"></a>coef_property <span class="ot">&lt;-</span> <span class="fu">tidy</span>(<span class="fu">coeftest</span>(model_property, <span class="at">vcov =</span> vcovHC), <span class="at">conf.int =</span> <span class="cn">TRUE</span>, <span class="at">conf.level =</span> <span class="fl">0.95</span>)</span>
+<span id="cb6-153"><a href="#cb6-153" aria-hidden="true" tabindex="-1"></a>coef_violent <span class="ot">&lt;-</span> <span class="fu">tidy</span>(<span class="fu">coeftest</span>(model_violent, <span class="at">vcov =</span> vcovHC), <span class="at">conf.int =</span> <span class="cn">TRUE</span>, <span class="at">conf.level =</span> <span class="fl">0.95</span>)</span>
+<span id="cb6-154"><a href="#cb6-154" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-155"><a href="#cb6-155" aria-hidden="true" tabindex="-1"></a>combined_results <span class="ot">&lt;-</span> <span class="fu">bind_rows</span>(</span>
+<span id="cb6-156"><a href="#cb6-156" aria-hidden="true" tabindex="-1"></a>  coef_property <span class="sc">%&gt;%</span> </span>
+<span id="cb6-157"><a href="#cb6-157" aria-hidden="true" tabindex="-1"></a>    <span class="fu">filter</span>(term <span class="sc">==</span> <span class="st">"dst_dummy"</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb6-158"><a href="#cb6-158" aria-hidden="true" tabindex="-1"></a>    <span class="fu">mutate</span>(<span class="at">crime_type =</span> <span class="st">"Property Crime"</span>),</span>
+<span id="cb6-159"><a href="#cb6-159" aria-hidden="true" tabindex="-1"></a>  coef_violent <span class="sc">%&gt;%</span></span>
+<span id="cb6-160"><a href="#cb6-160" aria-hidden="true" tabindex="-1"></a>    <span class="fu">filter</span>(term <span class="sc">==</span> <span class="st">"dst_dummy"</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb6-161"><a href="#cb6-161" aria-hidden="true" tabindex="-1"></a>    <span class="fu">mutate</span>(<span class="at">crime_type =</span> <span class="st">"Violent Crime"</span>)</span>
+<span id="cb6-162"><a href="#cb6-162" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb6-163"><a href="#cb6-163" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-164"><a href="#cb6-164" aria-hidden="true" tabindex="-1"></a><span class="fu">modelsummary</span>(</span>
+<span id="cb6-165"><a href="#cb6-165" aria-hidden="true" tabindex="-1"></a>  <span class="fu">list</span>(<span class="st">"Property Crime"</span> <span class="ot">=</span> model_property, <span class="st">"Violent Crime"</span> <span class="ot">=</span> model_violent),</span>
+<span id="cb6-166"><a href="#cb6-166" aria-hidden="true" tabindex="-1"></a>  <span class="at">coef_map =</span> <span class="fu">c</span>(<span class="st">"dst_dummy"</span> <span class="ot">=</span> <span class="st">"DST Effect"</span>),</span>
+<span id="cb6-167"><a href="#cb6-167" aria-hidden="true" tabindex="-1"></a>  <span class="at">vcov =</span> <span class="st">"robust"</span>,</span>
+<span id="cb6-168"><a href="#cb6-168" aria-hidden="true" tabindex="-1"></a>  <span class="at">gof_map =</span> <span class="fu">c</span>(<span class="st">"nobs"</span>, <span class="st">"vcov.type"</span>),</span>
+<span id="cb6-169"><a href="#cb6-169" aria-hidden="true" tabindex="-1"></a>  <span class="at">statistic =</span> <span class="fu">c</span>(<span class="st">"conf.int"</span>, <span class="st">"s.e. = {std.error}"</span>),</span>
+<span id="cb6-170"><a href="#cb6-170" aria-hidden="true" tabindex="-1"></a>  <span class="at">stars =</span> <span class="cn">TRUE</span>,</span>
+<span id="cb6-171"><a href="#cb6-171" aria-hidden="true" tabindex="-1"></a>  <span class="at">title =</span> <span class="st">"Effect of DST on Crime per 100k"</span></span>
+<span id="cb6-172"><a href="#cb6-172" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb6-173"><a href="#cb6-173" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb6-174"><a href="#cb6-174" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-175"><a href="#cb6-175" aria-hidden="true" tabindex="-1"></a>Our estimates confirm the intuition from the graphs. Both estimates are close to 0,<span class="ot">[^3]</span> and the confidence intervals suggest that DST has little to no meaningful effect on crime rates in Vancouver.</span>
+<span id="cb6-176"><a href="#cb6-176" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-177"><a href="#cb6-177" aria-hidden="true" tabindex="-1"></a><span class="ot">[^3]: </span>The violent crime estimate displays 0 since it was rounded to 3 decimal places.</span>
+<span id="cb6-178"><a href="#cb6-178" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-179"><a href="#cb6-179" aria-hidden="true" tabindex="-1"></a><span class="fu"># Robustness Checks</span></span>
+<span id="cb6-180"><a href="#cb6-180" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-181"><a href="#cb6-181" aria-hidden="true" tabindex="-1"></a>It's possible that the functional form of @eq-rdd does not adequately capture the true effect of DST on crime. It's also possible that the 21 day bandwidth I chose does not give good results for whatever reason. To check whether either of these are actual problems, I'll run some additional analyses with a quadratic functional form: $$</span>
+<span id="cb6-182"><a href="#cb6-182" aria-hidden="true" tabindex="-1"></a>\begin{aligned}</span>
+<span id="cb6-183"><a href="#cb6-183" aria-hidden="true" tabindex="-1"></a>crime &amp;= \alpha + \beta_1 days + \beta_2 days^2 + \beta_4 DST</span>
+<span id="cb6-184"><a href="#cb6-184" aria-hidden="true" tabindex="-1"></a><span class="sc">\\</span> &amp;+ (\beta_5 days + \beta_6 days^2)*DST + \delta W + \gamma_{dow}</span>
+<span id="cb6-185"><a href="#cb6-185" aria-hidden="true" tabindex="-1"></a>\end{aligned}</span>
+<span id="cb6-186"><a href="#cb6-186" aria-hidden="true" tabindex="-1"></a>$$ along with bandwidths ranging from 2 weeks to 8 weeks.</span>
+<span id="cb6-187"><a href="#cb6-187" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-188"><a href="#cb6-188" aria-hidden="true" tabindex="-1"></a><span class="in">```{r robustness check}</span></span>
+<span id="cb6-189"><a href="#cb6-189" aria-hidden="true" tabindex="-1"></a><span class="co">#| label: fig-robust</span></span>
+<span id="cb6-190"><a href="#cb6-190" aria-hidden="true" tabindex="-1"></a><span class="co">#| fig-cap: "Graphs of the estimates of DST on crime rates for different bandwidths and functional forms."</span></span>
+<span id="cb6-191"><a href="#cb6-191" aria-hidden="true" tabindex="-1"></a><span class="co">#| classes: dark-light</span></span>
+<span id="cb6-192"><a href="#cb6-192" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-193"><a href="#cb6-193" aria-hidden="true" tabindex="-1"></a>run_model_quad <span class="ot">&lt;-</span> <span class="cf">function</span>(outcome, bandwidth) {</span>
+<span id="cb6-194"><a href="#cb6-194" aria-hidden="true" tabindex="-1"></a>  formula <span class="ot">&lt;-</span> <span class="fu">as.formula</span>(<span class="fu">paste</span>(outcome, <span class="st">"~ poly(days_from_dst, 2, raw=TRUE)*dst_dummy +</span></span>
+<span id="cb6-195"><a href="#cb6-195" aria-hidden="true" tabindex="-1"></a><span class="st">                             day_of_week + rain + avg_temperature"</span>))</span>
+<span id="cb6-196"><a href="#cb6-196" aria-hidden="true" tabindex="-1"></a>  <span class="fu">lm</span>(formula, <span class="at">data =</span> merged_data_clean, <span class="at">subset =</span> <span class="fu">abs</span>(days_from_dst) <span class="sc">&lt;=</span> bandwidth)</span>
+<span id="cb6-197"><a href="#cb6-197" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb6-198"><a href="#cb6-198" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-199"><a href="#cb6-199" aria-hidden="true" tabindex="-1"></a><span class="co"># Bandwidths are the range of days around start of DST.</span></span>
+<span id="cb6-200"><a href="#cb6-200" aria-hidden="true" tabindex="-1"></a>bandwidths <span class="ot">&lt;-</span> <span class="fu">seq</span>(<span class="dv">14</span>, <span class="dv">56</span>, <span class="at">by =</span> <span class="dv">7</span>)</span>
+<span id="cb6-201"><a href="#cb6-201" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-202"><a href="#cb6-202" aria-hidden="true" tabindex="-1"></a>get_models_results <span class="ot">&lt;-</span> <span class="cf">function</span>(bandwidth) {</span>
+<span id="cb6-203"><a href="#cb6-203" aria-hidden="true" tabindex="-1"></a>  linear_prop <span class="ot">&lt;-</span> <span class="fu">run_model_linear</span>(<span class="st">"num_property_crime_perht"</span>, bandwidth)</span>
+<span id="cb6-204"><a href="#cb6-204" aria-hidden="true" tabindex="-1"></a>  linear_violent <span class="ot">&lt;-</span> <span class="fu">run_model_linear</span>(<span class="st">"num_violent_crime_perht"</span>, bandwidth)</span>
+<span id="cb6-205"><a href="#cb6-205" aria-hidden="true" tabindex="-1"></a>  quad_prop <span class="ot">&lt;-</span> <span class="fu">run_model_quad</span>(<span class="st">"num_property_crime_perht"</span>, bandwidth)</span>
+<span id="cb6-206"><a href="#cb6-206" aria-hidden="true" tabindex="-1"></a>  quad_violent <span class="ot">&lt;-</span> <span class="fu">run_model_quad</span>(<span class="st">"num_violent_crime_perht"</span>, bandwidth)</span>
+<span id="cb6-207"><a href="#cb6-207" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb6-208"><a href="#cb6-208" aria-hidden="true" tabindex="-1"></a>  results <span class="ot">&lt;-</span> <span class="fu">bind_rows</span>(</span>
+<span id="cb6-209"><a href="#cb6-209" aria-hidden="true" tabindex="-1"></a>    <span class="fu">tidy</span>(<span class="fu">coeftest</span>(linear_prop, <span class="at">vcov =</span> vcovHC), <span class="at">conf.int =</span> <span class="cn">TRUE</span>) <span class="sc">%&gt;%</span> </span>
+<span id="cb6-210"><a href="#cb6-210" aria-hidden="true" tabindex="-1"></a>      <span class="fu">filter</span>(term <span class="sc">==</span> <span class="st">"dst_dummy"</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb6-211"><a href="#cb6-211" aria-hidden="true" tabindex="-1"></a>      <span class="fu">mutate</span>(<span class="at">crime_type =</span> <span class="st">"Property Crime"</span>,</span>
+<span id="cb6-212"><a href="#cb6-212" aria-hidden="true" tabindex="-1"></a>             <span class="at">model_type =</span> <span class="st">"Linear"</span>,</span>
+<span id="cb6-213"><a href="#cb6-213" aria-hidden="true" tabindex="-1"></a>             <span class="at">bandwidth =</span> bandwidth),</span>
+<span id="cb6-214"><a href="#cb6-214" aria-hidden="true" tabindex="-1"></a>    <span class="fu">tidy</span>(<span class="fu">coeftest</span>(linear_violent, <span class="at">vcov =</span> vcovHC), <span class="at">conf.int =</span> <span class="cn">TRUE</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb6-215"><a href="#cb6-215" aria-hidden="true" tabindex="-1"></a>      <span class="fu">filter</span>(term <span class="sc">==</span> <span class="st">"dst_dummy"</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb6-216"><a href="#cb6-216" aria-hidden="true" tabindex="-1"></a>      <span class="fu">mutate</span>(<span class="at">crime_type =</span> <span class="st">"Violent Crime"</span>,</span>
+<span id="cb6-217"><a href="#cb6-217" aria-hidden="true" tabindex="-1"></a>             <span class="at">model_type =</span> <span class="st">"Linear"</span>,</span>
+<span id="cb6-218"><a href="#cb6-218" aria-hidden="true" tabindex="-1"></a>             <span class="at">bandwidth =</span> bandwidth),</span>
+<span id="cb6-219"><a href="#cb6-219" aria-hidden="true" tabindex="-1"></a>    <span class="fu">tidy</span>(<span class="fu">coeftest</span>(quad_prop, <span class="at">vcov =</span> vcovHC), <span class="at">conf.int =</span> <span class="cn">TRUE</span>) <span class="sc">%&gt;%</span> </span>
+<span id="cb6-220"><a href="#cb6-220" aria-hidden="true" tabindex="-1"></a>      <span class="fu">filter</span>(term <span class="sc">==</span> <span class="st">"dst_dummy"</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb6-221"><a href="#cb6-221" aria-hidden="true" tabindex="-1"></a>      <span class="fu">mutate</span>(<span class="at">crime_type =</span> <span class="st">"Property Crime"</span>,</span>
+<span id="cb6-222"><a href="#cb6-222" aria-hidden="true" tabindex="-1"></a>             <span class="at">model_type =</span> <span class="st">"Quadratic"</span>,</span>
+<span id="cb6-223"><a href="#cb6-223" aria-hidden="true" tabindex="-1"></a>             <span class="at">bandwidth =</span> bandwidth),</span>
+<span id="cb6-224"><a href="#cb6-224" aria-hidden="true" tabindex="-1"></a>    <span class="fu">tidy</span>(<span class="fu">coeftest</span>(quad_violent, <span class="at">vcov =</span> vcovHC), <span class="at">conf.int =</span> <span class="cn">TRUE</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb6-225"><a href="#cb6-225" aria-hidden="true" tabindex="-1"></a>      <span class="fu">filter</span>(term <span class="sc">==</span> <span class="st">"dst_dummy"</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb6-226"><a href="#cb6-226" aria-hidden="true" tabindex="-1"></a>      <span class="fu">mutate</span>(<span class="at">crime_type =</span> <span class="st">"Violent Crime"</span>,</span>
+<span id="cb6-227"><a href="#cb6-227" aria-hidden="true" tabindex="-1"></a>             <span class="at">model_type =</span> <span class="st">"Quadratic"</span>,</span>
+<span id="cb6-228"><a href="#cb6-228" aria-hidden="true" tabindex="-1"></a>             <span class="at">bandwidth =</span> bandwidth)</span>
+<span id="cb6-229"><a href="#cb6-229" aria-hidden="true" tabindex="-1"></a>  )</span>
+<span id="cb6-230"><a href="#cb6-230" aria-hidden="true" tabindex="-1"></a>  <span class="fu">return</span>(results)</span>
+<span id="cb6-231"><a href="#cb6-231" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb6-232"><a href="#cb6-232" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-233"><a href="#cb6-233" aria-hidden="true" tabindex="-1"></a>all_results <span class="ot">&lt;-</span> <span class="fu">map_dfr</span>(bandwidths, get_models_results)</span>
+<span id="cb6-234"><a href="#cb6-234" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-235"><a href="#cb6-235" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(all_results, </span>
+<span id="cb6-236"><a href="#cb6-236" aria-hidden="true" tabindex="-1"></a>       <span class="fu">aes</span>(<span class="at">x =</span> bandwidth, <span class="at">y =</span> estimate, </span>
+<span id="cb6-237"><a href="#cb6-237" aria-hidden="true" tabindex="-1"></a>           <span class="at">ymin =</span> conf.low, <span class="at">ymax =</span> conf.high,</span>
+<span id="cb6-238"><a href="#cb6-238" aria-hidden="true" tabindex="-1"></a>           <span class="at">color =</span> model_type)) <span class="sc">+</span></span>
+<span id="cb6-239"><a href="#cb6-239" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>(<span class="at">position =</span> <span class="fu">position_dodge</span>(<span class="at">width =</span> <span class="dv">3</span>)) <span class="sc">+</span></span>
+<span id="cb6-240"><a href="#cb6-240" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_errorbar</span>(<span class="at">position =</span> <span class="fu">position_dodge</span>(<span class="at">width =</span> <span class="dv">3</span>), <span class="at">width =</span> <span class="dv">2</span>) <span class="sc">+</span></span>
+<span id="cb6-241"><a href="#cb6-241" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_hline</span>(<span class="at">yintercept =</span> <span class="dv">0</span>, <span class="at">linetype =</span> <span class="st">"dashed"</span>, <span class="at">color =</span> <span class="st">"darkslategrey"</span>) <span class="sc">+</span></span>
+<span id="cb6-242"><a href="#cb6-242" aria-hidden="true" tabindex="-1"></a>  <span class="fu">facet_wrap</span>(<span class="sc">~</span>crime_type, <span class="at">scales =</span> <span class="st">"free_y"</span>) <span class="sc">+</span></span>
+<span id="cb6-243"><a href="#cb6-243" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">x =</span> <span class="st">"Bandwidth (Days)"</span>,</span>
+<span id="cb6-244"><a href="#cb6-244" aria-hidden="true" tabindex="-1"></a>       <span class="at">y =</span> <span class="st">"Estimated DST Effect"</span>,</span>
+<span id="cb6-245"><a href="#cb6-245" aria-hidden="true" tabindex="-1"></a>       <span class="at">color =</span> <span class="st">"Model Type"</span>,</span>
+<span id="cb6-246"><a href="#cb6-246" aria-hidden="true" tabindex="-1"></a>       <span class="at">title =</span> <span class="st">"DST Effects Across Different Bandwidths"</span>,</span>
+<span id="cb6-247"><a href="#cb6-247" aria-hidden="true" tabindex="-1"></a>       <span class="at">subtitle =</span> <span class="st">"Point Estimates and 95% Confidence Intervals"</span>) <span class="sc">+</span></span>
+<span id="cb6-248"><a href="#cb6-248" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_x_continuous</span>(<span class="at">breaks =</span> bandwidths)</span>
+<span id="cb6-249"><a href="#cb6-249" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb6-250"><a href="#cb6-250" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-251"><a href="#cb6-251" aria-hidden="true" tabindex="-1"></a>As we can see, the estimates are all fairly close in general. The confidence intervals become wider with smaller bandwidths, and the quadratic model shows more uncertainty - both of which we would expect. It seems like DST indeed has little to no effect on crime in Vancouver.</span>
+<span id="cb6-252"><a href="#cb6-252" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-253"><a href="#cb6-253" aria-hidden="true" tabindex="-1"></a><span class="fu"># Conclusion</span></span>
+<span id="cb6-254"><a href="#cb6-254" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-255"><a href="#cb6-255" aria-hidden="true" tabindex="-1"></a>To recap, I've applied the sharp RDD methodology of @doleac2015 to Vancouver, yielding results that contrast with previous findings from the United States:</span>
+<span id="cb6-256"><a href="#cb6-256" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-257"><a href="#cb6-257" aria-hidden="true" tabindex="-1"></a><span class="ss">1.  </span>There is no statistically significant impact of DST on either property or violent crime rates in Vancouver.</span>
+<span id="cb6-258"><a href="#cb6-258" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-259"><a href="#cb6-259" aria-hidden="true" tabindex="-1"></a><span class="ss">2.  </span>This lack of effect persists across different model specifications and bandwidths (range of days), suggesting robust results.</span>
+<span id="cb6-260"><a href="#cb6-260" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-261"><a href="#cb6-261" aria-hidden="true" tabindex="-1"></a>A couple takeaways from these results:</span>
+<span id="cb6-262"><a href="#cb6-262" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-263"><a href="#cb6-263" aria-hidden="true" tabindex="-1"></a><span class="ss">1.  </span>**Local Context Matters**: This might be a bit obvious for anyone who understands that RDD estimates local treatment effects, but to reiterate – the discrepancy between these results and those of @doleac2015 underscores the importance of local context in understanding the relationship between ambient light and crime. Factors such as baseline daylight hours, urban infrastructure, and social patterns may all play a role in mediating the effect of DST on criminal activity.</span>
+<span id="cb6-264"><a href="#cb6-264" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-265"><a href="#cb6-265" aria-hidden="true" tabindex="-1"></a><span class="ss">2.  </span>**Policy Implications**: For policymakers in Vancouver considering the potential benefits or drawbacks of DST, these results suggest that crime reduction should not be considered a relevant factor in these deliberations. The lack of a detectable effect on crime rates indicates that other considerations, such as energy usage or public health, may be more relevant to DST policy decisions.</span>
+<span id="cb6-266"><a href="#cb6-266" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-267"><a href="#cb6-267" aria-hidden="true" tabindex="-1"></a>And of course, I'm personally happy that there is one less reason to have DST if we're considering its effects in Vancouver.<span class="ot">[^4]</span></span>
+<span id="cb6-268"><a href="#cb6-268" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-269"><a href="#cb6-269" aria-hidden="true" tabindex="-1"></a><span class="ot">[^4]: </span>This is a joke – dealing with DST is an easy trade-off for lower crime.</span>
+<span id="cb6-270"><a href="#cb6-270" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-271"><a href="#cb6-271" aria-hidden="true" tabindex="-1"></a><span class="fu">## Changelog</span></span>
+<span id="cb6-272"><a href="#cb6-272" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-273"><a href="#cb6-273" aria-hidden="true" tabindex="-1"></a><span class="ss">-   </span>2024-10-27: Initial post&nbsp;</span>
+<span id="cb6-274"><a href="#cb6-274" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-275"><a href="#cb6-275" aria-hidden="true" tabindex="-1"></a><span class="ss">-   </span>2024-11-06: Made changelog, changed robustness check methodology, and changed some of the code for graphs and tables.</span>
 </code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div></div></div></div></div>
 </div> <!-- /content -->

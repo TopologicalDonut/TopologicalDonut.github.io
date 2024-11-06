@@ -14,3 +14,7 @@ ggdag
 broom
 thematic
 quartoExtra
+modelsummary
+sandwich
+zoo
+lmtest
