@@ -2,6 +2,7 @@
 title: "Home"
 image: media/BabyPudding.jpg
 toc: false
+resources: files/Resume.pdf
 about: 
   template: jolla
   image-shape: round
@@ -15,7 +16,7 @@ about:
       href: mailto:stephenmin31@gmail.com
     - icon: file-pdf
       text: Resume
-      href: files/Resume_Stephen_Min.pdf
+      href: files/Resume.pdf
 ---
 
 Welcome to my site! I'm Stephen Min, a recent graduate from the MA in Economics program at Simon Fraser University. If you're interested, take a look at my [portfolio](portfolio.qmd) and [blog posts](posts.qmd) (to be done). 
