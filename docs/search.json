@@ -39,6 +39,6 @@
     "href": "posts/Vancouver_DST/index.html#changelog",
     "title": "How Does Daylight Savings Time Affect Crime in Vancouver?",
     "section": "Changelog",
-    "text": "Changelog\n\n2024-10-27: Initial post \n2024-11-06: Made changelog, changed robustness check methodology, and changed some of the code for graphs and tables."
+    "text": "Changelog\n\n2024-10-27: Initial post.\n2024-11-06: Made changelog, changed robustness check methodology, and changed some of the code for graphs and tables.\n2024-11-14: Minor formatting changes."
   }
 ]

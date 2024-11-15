@@ -98,7 +98,8 @@ darkmode_theme_set(
   light = ggthemes::theme_stata(scheme = "s1color")
 )
 
-# Grouping crime into average per day so that the graphs are readable. Otherwise there'd be too many data points.
+# Grouping crime into average per day so that the graphs are readable. Otherwise 
+# there'd be too many data points.
 avg_crime_by_day <- merged_data_clean %>%
   group_by(days_from_dst, dst_dummy) %>%
   summarise(
@@ -125,7 +126,7 @@ ggplot(avg_crime_by_day_long, aes(x = days_from_dst, y = crime_rate)) +
               se = FALSE, colour = "#a011ed", linewidth = 0.5) +
   geom_smooth(data = filter(avg_crime_by_day_long, dst_dummy == 1), 
               se = FALSE, colour = "red", linewidth = 0.5) +
-  geom_vline(xintercept = 0, linetype = "dashed", colour = "darkslategrey") +
+  geom_vline(xintercept = 0, linetype = "dashed", colour = "darkslategray4") +
   facet_wrap(~crime_type, scales = "free_y", ncol = 1) +
   labs(x = "Days from DST Start", 
        y = "Crimes per 100k",
@@ -179,9 +180,6 @@ run_model_quad <- function(outcome, bandwidth) {
   lm(formula, data = merged_data_clean, subset = abs(days_from_dst) <= bandwidth)
 }
 
-# Bandwidths are the range of days around start of DST.
-bandwidths <- seq(14, 56, by = 7)
-
 get_models_results <- function(bandwidth) {
   linear_prop <- run_model_linear("num_property_crime_perht", bandwidth)
   linear_violent <- run_model_linear("num_violent_crime_perht", bandwidth)
@@ -213,6 +211,8 @@ get_models_results <- function(bandwidth) {
   return(results)
 }
 
+bandwidths <- seq(14, 56, by = 7)
+
 all_results <- map_dfr(bandwidths, get_models_results)
 
 darkmode_theme_set(
@@ -226,7 +226,7 @@ ggplot(all_results,
            color = model_type)) +
   geom_point(position = position_dodge(width = 3)) +
   geom_errorbar(position = position_dodge(width = 3), width = 2) +
-  geom_hline(yintercept = 0, linetype = "dashed", color = "darkslategrey") +
+  geom_hline(yintercept = 0, linetype = "dashed", color = "darkslategray4") +
   facet_wrap(~crime_type, scales = "free_y") +
   labs(x = "Bandwidth (Days)",
        y = "Estimated DST Effect",
@@ -236,7 +236,7 @@ ggplot(all_results,
   scale_x_continuous(breaks = bandwidths)
 ```
 
-As we can see, the estimates are all fairly close in general. The confidence intervals become wider with smaller bandwidths, and the quadratic model shows more uncertainty - both of which we would expect. It seems like DST indeed has little to no effect on crime in Vancouver.
+As we can see, the estimates are all fairly close in general. The confidence intervals become wider with smaller bandwidths, and the quadratic model shows more uncertainty – both of which we would expect. It seems like DST indeed has little to no effect on crime in Vancouver.
 
 # Conclusion
 
@@ -258,6 +258,8 @@ And of course, I'm personally happy that there is one less reason to have DST if
 
 ## Changelog
 
--   2024-10-27: Initial post 
+-   2024-10-27: Initial post.
 
 -   2024-11-06: Made changelog, changed robustness check methodology, and changed some of the code for graphs and tables.
+
+-   2024-11-14: Minor formatting changes.
