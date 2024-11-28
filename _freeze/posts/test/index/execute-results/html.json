@@ -1,0 +1,16 @@
+{
+  "hash": "6967963b625191a1e33bc2c044bd2c1a",
+  "result": {
+    "markdown": "---\ntitle: \"Generated images for dark and light mode\"\nformat:\n  html:\n    theme:\n      light: united\n      dark: slate\nexecute:\n  warning: false\nknitr: \n  opts_chunk: \n    dev: [svglite, darksvglite]\n    fig.ext: [.light.svg, .dark.svg]\ninclude-after-body:\n  text: |\n    <script type=\"application/javascript\" src=\"/light-dark.js\"></script>\n---\n\n\n\n::: {.cell .column-screen-inset}\n\n```{.r .cell-code}\nlibrary(ggplot2)\nlibrary(palmerpenguins)\ntheme_set(theme_light())\nggplot(data = penguins) +\n  aes(\n    x = flipper_length_mm,\n    y = body_mass_g / 1e3,\n    colour = species,\n    shape = species\n  ) +\n  geom_point(alpha = 0.8, na.rm = TRUE) +\n  scale_colour_manual(values = c(\"darkorange\", \"purple\", \"cyan4\")) +\n  labs(\n    x = \"Flipper Length (mm)\",\n    y = \"Body Mass (kg)\",\n    color = \"Penguin Species\",\n    shape = \"Penguin Species\"\n  )\n```\n\n::: {.cell-output-display}\n![](index_files/figure-html/unnamed-chunk-2-1..light.svg){width=80%}\n:::\n:::\n",
+    "supporting": [
+      "index_files"
+    ],
+    "filters": [
+      "rmarkdown/pagebreak.lua"
+    ],
+    "includes": {},
+    "engineDependencies": {},
+    "preserve": {},
+    "postProcess": true
+  }
+}
