@@ -4,7 +4,7 @@
     "href": "portfolio.html",
     "title": "Portfolio",
     "section": "",
-    "text": "Quantifying Heterogeneity of Discrimination in the Canadian Labor Market\nThis is a mini-research paper that was done as my capstone project for my MA in economics at Simon Fraser University; we were given 4 months to develop a research question and write a paper answering it. I applied a causal machine learning algorithm (causal forest) to a dataset from Oreopoulos (2011) that contains information on artificial resumes that were sent out to Canadian employers roughly 10 years ago. I used various transformations and visualizations of the algorithm outputs to quantify how different groups of minorities are impacted by discrimination in the labor market.\nLink to paper  Source code \n\n\nVancouver Crime Analysis\nThis is an analysis of how daylight savings time (DST) affects crime in Vancouver. Inspired by Doleac and Sanders (2015), I applied a regression discontinuity design with the running variable being days from DST.\nLink to blog post  Source code \n\n\nUK Tax Policy Analysis\nThis is an analysis of how the 2021 UK tampon tax abolition affected tampon prices using an event study. I used a regression with ARIMA errors to account for the time series nature of price data.\nLink to report  Source code \n\n\n\n\n\nReferences\n\nDoleac, Jennifer L., and Nicholas J. Sanders. 2015. “Under the Cover of Darkness: How Ambient Light Influences Criminal Activity.” Review of Economics and Statistics 97 (5): 1093–103. https://doi.org/10.1162/rest_a_00547.\n\n\nOreopoulos, Philip. 2011. “Why Do Skilled Immigrants Struggle in the Labor Market? A Field Experiment with Thirteen Thousand Resumes.” American Economic Journal: Economic Policy 3 (4): 148–71. https://doi.org/10.1257/pol.3.4.148."
+    "text": "Quantifying Heterogeneity of Discrimination in the Canadian Labor Market\nThis is a mini-research paper that was done as my capstone project for my MA in economics at Simon Fraser University; we were given 4 months to develop a research question and write a paper answering it.\nI applied a causal machine learning algorithm (causal forest) to a dataset from Oreopoulos (2011) that contains information on artificial resumes that were sent out to Canadian employers roughly 10 years ago. I used various transformations and visualizations of the algorithm outputs to quantify how different groups of minorities are impacted by discrimination in the labor market.\nLink to paper  Source code \n\n\nONS Item-Level CPI Data Pipeline\nThis is a Python-based ETL pipeline for automating the collection and processing of item-level consumer price index (CPI) data from the UK’s Office for National Statistics (ONS).\nThe pipeline scrapes all the files and zips that contain data on price indices, validates the data quality, and stores the data into a local DuckDB database.\nSource Code \n\n\nUK Tax Policy Analysis\nThis is an analysis of how the 2021 UK tampon tax abolition affected tampon prices using an event study. I queried the database made by the ONS Pipeline to get relevant data and used a regression with ARIMA errors to account for the time series nature of price data.\nLink to report  Source code \n\n\nVancouver Crime Analysis\nThis is an analysis of how daylight savings time (DST) affects crime in Vancouver. Inspired by Doleac and Sanders (2015). I applied a regression discontinuity design with the running variable being days from DST.\nLink to blog post  Source code \n\n\n\n\n\nReferences\n\nDoleac, Jennifer L., and Nicholas J. Sanders. 2015. “Under the Cover of Darkness: How Ambient Light Influences Criminal Activity.” Review of Economics and Statistics 97 (5): 1093–103. https://doi.org/10.1162/rest_a_00547.\n\n\nOreopoulos, Philip. 2011. “Why Do Skilled Immigrants Struggle in the Labor Market? A Field Experiment with Thirteen Thousand Resumes.” American Economic Journal: Economic Policy 3 (4): 148–71. https://doi.org/10.1257/pol.3.4.148."
   },
   {
     "objectID": "index.html",
@@ -47,5 +47,33 @@
     "title": "Generated images for dark and light mode",
     "section": "",
     "text": "library(ggplot2)\nlibrary(palmerpenguins)\ntheme_set(theme_light())\nggplot(data = penguins) +\n  aes(\n    x = flipper_length_mm,\n    y = body_mass_g / 1e3,\n    colour = species,\n    shape = species\n  ) +\n  geom_point(alpha = 0.8, na.rm = TRUE) +\n  scale_colour_manual(values = c(\"darkorange\", \"purple\", \"cyan4\")) +\n  labs(\n    x = \"Flipper Length (mm)\",\n    y = \"Body Mass (kg)\",\n    color = \"Penguin Species\",\n    shape = \"Penguin Species\"\n  )"
+  },
+  {
+    "objectID": "portfolio.html#quantifying-heterogeneity-of-discrimination-in-the-canadian-labor-market",
+    "href": "portfolio.html#quantifying-heterogeneity-of-discrimination-in-the-canadian-labor-market",
+    "title": "Portfolio",
+    "section": "",
+    "text": "This is a mini-research paper that was done as my capstone project for my MA in economics at Simon Fraser University; we were given 4 months to develop a research question and write a paper answering it.\nI applied a causal machine learning algorithm (causal forest) to a dataset from Oreopoulos (2011) that contains information on artificial resumes that were sent out to Canadian employers roughly 10 years ago. I used various transformations and visualizations of the algorithm outputs to quantify how different groups of minorities are impacted by discrimination in the labor market.\nLink to paper  Source code"
+  },
+  {
+    "objectID": "portfolio.html#ons-item-level-cpi-data-pipeline",
+    "href": "portfolio.html#ons-item-level-cpi-data-pipeline",
+    "title": "Portfolio",
+    "section": "ONS Item-Level CPI Data Pipeline",
+    "text": "ONS Item-Level CPI Data Pipeline\nThis is a Python-based ETL pipeline for automating the collection and processing of item-level consumer price index (CPI) data from the UK’s Office for National Statistics (ONS).\nThe pipeline scrapes all the files and zips that contain data on price indices, validates the data quality, and stores the data into a local DuckDB database.\nSource Code"
+  },
+  {
+    "objectID": "portfolio.html#uk-tax-policy-analysis",
+    "href": "portfolio.html#uk-tax-policy-analysis",
+    "title": "Portfolio",
+    "section": "UK Tax Policy Analysis",
+    "text": "UK Tax Policy Analysis\nThis is an analysis of how the 2021 UK tampon tax abolition affected tampon prices using an event study. I queried the database made by the ONS Pipeline to get relevant data and used a regression with ARIMA errors to account for the time series nature of price data.\nLink to report  Source code"
+  },
+  {
+    "objectID": "portfolio.html#vancouver-crime-analysis",
+    "href": "portfolio.html#vancouver-crime-analysis",
+    "title": "Portfolio",
+    "section": "Vancouver Crime Analysis",
+    "text": "Vancouver Crime Analysis\nThis is an analysis of how daylight savings time (DST) affects crime in Vancouver. Inspired by Doleac and Sanders (2015). I applied a regression discontinuity design with the running variable being days from DST.\nLink to blog post  Source code"
   }
 ]
