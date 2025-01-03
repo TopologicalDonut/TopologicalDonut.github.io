@@ -172,7 +172,7 @@ div.csl-indent {
 <section id="ons-item-level-cpi-data-pipeline" class="level1">
 <h1>ONS Item-Level CPI Data Pipeline</h1>
 <p>This is a Python-based ETL pipeline for automating the collection and processing of item-level consumer price index (CPI) data from the UK’s Office for National Statistics (ONS).</p>
-<p>The pipeline scrapes all the files and zips that contain data on price indices, validates the data quality, and stores the data into a local DuckDB database.</p>
+<p>The pipeline scrapes all the files and zips that contain data on price indices, processes the data using Polars, and stores it into a local DuckDB database.</p>
 <p><a href="https://github.com/TopologicalDonut/ONS-pipeline" class="btn btn-outline-primary">Source Code <i class="fa-brands fa-github" aria-label="github"></i></a></p>
 </section>
 <section id="uk-tax-policy-analysis" class="level1">
@@ -182,7 +182,7 @@ div.csl-indent {
 </section>
 <section id="vancouver-crime-analysis" class="level1">
 <h1>Vancouver Crime Analysis</h1>
-<p>This is an analysis of how daylight savings time (DST) affects crime in Vancouver. Inspired by <span class="citation" data-cites="doleac2015">Doleac and Sanders (<a href="#ref-doleac2015" role="doc-biblioref">2015</a>)</span>. I applied a regression discontinuity design with the running variable being days from DST.</p>
+<p>This is an analysis of how daylight savings time (DST) affects crime in Vancouver. Inspired by <span class="citation" data-cites="doleac2015">Doleac and Sanders (<a href="#ref-doleac2015" role="doc-biblioref">2015</a>)</span>, I applied a regression discontinuity design with the running variable being days from DST.</p>
 <p><a href="https://topologicaldonut.github.io/posts/Vancouver_DST/" class="btn btn-outline-primary">Link to blog post <i class="fa-solid fa-link" aria-label="link"></i></a> <a href="https://github.com/TopologicalDonut/Vancouver-Crime-Analysis" class="btn btn-outline-primary">Source code <i class="fa-brands fa-github" aria-label="github"></i></a></p>
 
 

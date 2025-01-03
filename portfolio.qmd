@@ -17,7 +17,7 @@ I applied a causal machine learning algorithm (causal forest) to a dataset from 
 
 This is a Python-based ETL pipeline for automating the collection and processing of item-level consumer price index (CPI) data from the UK's Office for National Statistics (ONS).
 
-The pipeline scrapes all the files and zips that contain data on price indices, validates the data quality, and stores the data into a local DuckDB database.
+The pipeline scrapes all the files and zips that contain data on price indices, processes the data using Polars, and stores it into a local DuckDB database.
 
 [Source Code {{< fa brands github >}}](https://github.com/TopologicalDonut/ONS-pipeline){.btn .btn-outline-primary}
 
@@ -29,6 +29,6 @@ This is an analysis of how the 2021 UK tampon tax abolition affected tampon pric
 
 # Vancouver Crime Analysis
 
-This is an analysis of how daylight savings time (DST) affects crime in Vancouver. Inspired by @doleac2015. I applied a regression discontinuity design with the running variable being days from DST.
+This is an analysis of how daylight savings time (DST) affects crime in Vancouver. Inspired by @doleac2015, I applied a regression discontinuity design with the running variable being days from DST.
 
 [Link to blog post {{< fa link >}}](https://topologicaldonut.github.io/posts/Vancouver_DST/){.btn .btn-outline-primary} [Source code {{< fa brands github >}}](https://github.com/TopologicalDonut/Vancouver-Crime-Analysis){.btn .btn-outline-primary}
