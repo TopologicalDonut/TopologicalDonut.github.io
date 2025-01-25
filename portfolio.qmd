@@ -7,7 +7,7 @@ bibliography: references.bib
 
 # Quantifying Heterogeneity of Discrimination in the Canadian Labor Market
 
-This is a mini-research paper that was done as my capstone project for my MA in economics at Simon Fraser University; we were given 4 months to develop a research question and write a paper answering it. 
+This is a mini-research paper that was done as my capstone project for my MA in economics at Simon Fraser University; we were given 4 months to develop a research question and write a paper answering it.
 
 I applied a causal machine learning algorithm (causal forest) to a dataset from @oreopoulos2011 that contains information on artificial resumes that were sent out to Canadian employers roughly 10 years ago. I used various transformations and visualizations of the algorithm outputs to quantify how different groups of minorities are impacted by discrimination in the labor market.
 
@@ -29,6 +29,6 @@ This is an analysis of how the 2021 UK tampon tax abolition affected tampon pric
 
 # Vancouver Crime Analysis
 
-This is an analysis of how daylight savings time (DST) affects crime in Vancouver. Inspired by @doleac2015, I applied a regression discontinuity design with the running variable being days from DST.
+This is an analysis of how daylight savings time (DST) affects crime in Vancouver. Inspired by @doleac2015, I applied a regression discontinuity design with the running variable being days from the start of DST.
 
 [Link to blog post {{< fa link >}}](https://topologicaldonut.github.io/posts/Vancouver_DST/){.btn .btn-outline-primary} [Source code {{< fa brands github >}}](https://github.com/TopologicalDonut/Vancouver-Crime-Analysis){.btn .btn-outline-primary}
