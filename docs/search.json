@@ -1,5 +1,12 @@
 [
   {
+    "objectID": "posts.html",
+    "href": "posts.html",
+    "title": "Posts",
+    "section": "",
+    "text": "How Does Daylight Savings Time Affect Crime in Vancouver?\n\n\n\n\n\nAnalyzing the effect of DST on crime using regression discontinuity.\n\n\n\n\n\nOct 27, 2024\n\n\nStephen Min\n\n\n\n\n\n\nNo matching items"
+  },
+  {
     "objectID": "portfolio.html",
     "href": "portfolio.html",
     "title": "Portfolio",
@@ -33,12 +40,5 @@
     "title": "How Does Daylight Savings Time Affect Crime in Vancouver?",
     "section": "Footnotes",
     "text": "Footnotes\n\n\nThis is a “sharp” RDD because there is a clear cutoff where all days after are affected by DST.↩︎\nThe RDD would ensure that estimates of the effect of DST are unbiased even when not accounting for weather, but including weather variables can improve the precision of our estimate.↩︎\nThis is a joke – dealing with DST is an easy trade-off for lower crime.↩︎"
-  },
-  {
-    "objectID": "posts.html",
-    "href": "posts.html",
-    "title": "Posts",
-    "section": "",
-    "text": "How Does Daylight Savings Time Affect Crime in Vancouver?\n\n\n\n\n\nAnalyzing the effect of DST on crime using regression discontinuity.\n\n\n\n\n\n\nOct 27, 2024\n\n\nStephen Min\n\n\n\n\n\n\nNo matching items"
   }
 ]
